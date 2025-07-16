@@ -1,3 +1,4 @@
+
 FROM verificarlo/verificarlo as builder
 
 ENV DEBIAN_FRONTEND="noninteractive"
@@ -15,6 +16,9 @@ RUN : \
     zlib1g-dev \
     && :
 
+# Remove -march=native from verificarlo
+RUN sed -i 's/-march=native//g' /usr/local/bin/verificarlo
+
 # ANTs superbuild failed to build ITK with verificarlo. So, we build ITK externally.
 # ITK paper-base.
 ARG ITK_VERSION="paper-base"
@@ -24,6 +28,7 @@ RUN : \
     && git checkout ${ITK_VERSION} \
     && mkdir -p /tmp/itk/build \
     && :
+COPY ./vprec-exclude.txt /tmp/vprec-exclude.txt
 # Configure ITK
 ENV VFC_BACKENDS="libinterflop_ieee.so"
 RUN : \
@@ -44,8 +49,10 @@ RUN : \
     -DModule_AdaptiveDenoising=ON \
     -DCMAKE_C_COMPILER=verificarlo-c \
     -DCMAKE_CXX_COMPILER=verificarlo-c++ \
-    -DCMAKE_C_FLAGS="--verbose" \
-    -DCMAKE_CXX_FLAGS="--verbose" \
+    -DCMAKE_C_FLAGS="--verbose --exclude-file=/tmp/vprec-exclude.txt" \
+    -DCMAKE_CXX_FLAGS="--verbose --exclude-file=/tmp/vprec-exclude.txt" \
+    -DITK_C_OPTIMIZATION_FLAGS="-march=x86-64" \ 
+    -DITK_CXX_OPTIMIZATION_FLAGS="-march=x86-64" \
     /tmp/itk/source \
     && :
 # Build ITK
@@ -56,11 +63,11 @@ RUN : \
 # Install ITK
 RUN : \
     && cd /tmp/itk/build \
-    && make install \
+    && make -j1 install \
     && :
 
 # ANTs paper-base with ITK verificarlo compilation.
-ARG ANTs_VERSION="paper-base-vprec"
+ARG ANTs_VERSION="paper-base"
 RUN : \
     && git clone https://github.com/mathdugre/ANTs.git /tmp/ants/source \
     && cd /tmp/ants/source \
@@ -79,11 +86,12 @@ RUN : \
     -DRUN_LONG_TESTS=OFF \
     -DRUN_SHORT_TESTS=ON \
     -DCMAKE_INSTALL_PREFIX=/opt/ants \
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_C_COMPILER=verificarlo-c \
     -DCMAKE_CXX_COMPILER=verificarlo-c++ \
-    -DCMAKE_C_FLAGS="--verbose" \
-    -DCMAKE_CXX_FLAGS="--verbose" \
+    -DCMAKE_C_FLAGS="--verbose --exclude-file=/tmp/vprec-exclude.txt" \
+    -DCMAKE_CXX_FLAGS="--verbose --exclude-file=/tmp/vprec-exclude.txt" \
+    -DANTS_C_OPTIMIZATION_FLAGS="-march=x86-64" \
+    -DANTS_CXX_OPTIMIZATION_FLAGS="-march=x86-64" \
     -DITK_DIR=/tmp/itk/build \
     -DUSE_SYSTEM_ITK=ON \
     /tmp/ants/source \
@@ -96,7 +104,7 @@ RUN : \
 # Install ANTs
 RUN : \
     && cd /tmp/ants/build/ANTS-build \
-    && make install \
+    && make -j1 install \
     && :
 
 # Need to set library path to run tests
