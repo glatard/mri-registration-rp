@@ -1,0 +1,451 @@
+@ARTICLE{McCormick2020-ic,
+  title         = "Algebraic error analysis for mixed-precision multigrid
+                   solvers",
+  author        = "McCormick, Stephen F and Benzaken, Joseph and Tamstorf,
+                   Rasmus",
+  journal       = "arXiv [math.NA]",
+  abstract      = "This paper establishes the first theoretical framework for
+                   analyzing the rounding-error effects on multigrid methods
+                   using mixed-precision iterative-refinement solvers. While
+                   motivated by the sparse symmetric positive definite (SPD)
+                   matrix equations that arise from discretizing linear elliptic
+                   PDEs, the framework is purely algebraic such that it applies
+                   to matrices that do not necessarily come from the continuum.
+                   Based on the so-called energy or $A$ norm, which is the
+                   natural norm for many problems involving SPD matrices, we
+                   provide a normwise forward error analysis, and introduce the
+                   notion of progressive precision for multigrid solvers. Each
+                   level of the multigrid hierarchy uses three different
+                   precisions that each increase with the fineness of the level,
+                   but at different rates, thereby ensuring that the bulk of the
+                   computation uses the lowest possible precision. The
+                   theoretical results developed here in the energy norm differ
+                   notably from previous theory based on the Euclidean norm in
+                   important ways. In particular, we show that simply rounding
+                   an exact result to finite precision causes an error in the
+                   energy norm that is proportional to the square root of
+                   $\kappa$, the associated matrix condition number. (By
+                   contrast, this error is of order $1$ when measured in the
+                   Euclidean norm.) Given this observation, we show that the
+                   limiting accuracy for both V-cycles and full multigrid is
+                   optimal in the sense that it is also proportional to
+                   $\kappa^{1/2}$ in energy. Additionally, we show that the loss
+                   of convergence rate due to rounding grows in proportion to
+                   $\kappa^{1/2}$, but argue that this loss is insignificant in
+                   practice. The theory presented here is the first forward
+                   error analysis in the energy norm of iterative refinement and
+                   the first rounding error analysis of multigrid in general.",
+  month         =  jul,
+  year          =  2020,
+  url           = "http://arxiv.org/abs/2007.06614",
+  archivePrefix = "arXiv",
+  primaryClass  = "math.NA",
+  eprint        = "2007.06614"
+}
+
+@ARTICLE{Tamstorf2021-ts,
+  title     = "Discretization-error-accurate mixed-precision multigrid solvers",
+  author    = "Tamstorf, Rasmus and Benzaken, Joseph and McCormick, Stephen F",
+  journal   = "SIAM journal on scientific computing: a publication of the
+               Society for Industrial and Applied Mathematics",
+  publisher = "Society for Industrial \& Applied Mathematics (SIAM)",
+  volume    =  43,
+  number    =  5,
+  pages     = "S420--S447",
+  abstract  = "This paper builds on the algebraic theory in the companion paper
+               [S. F. McCormick, J. Benzaken, and R. Tamstorf, SIAM J. Sci.
+               Comput., (2021), pp. S392--S419] to obtain
+               discretization-error-accurate solutions for linear elliptic
+               partial differential equations (PDEs) by mixed-precision
+               multigrid solvers. It is often assumed that the achievable
+               accuracy is limited by discretization or algebraic errors. On the
+               contrary, we show that the quantization error incurred by simply
+               storing the matrix in any fixed precision quickly begins to
+               dominate the total error as the discretization is refined. We
+               extend the existing theory to account for these quantization
+               errors and use the resulting bounds to guide the choice of four
+               different precision levels in order to balance quantization,
+               algebraic, and discretization errors in the progressive-precision
+               scheme proposed in the companion paper. A remarkable result is
+               that while iterative refinement is susceptible to quantization
+               errors during the residual and update computations, the V-cycle
+               used to compute the correction in each iteration is much more
+               resilient and continues to work if the system matrices in the
+               hierarchy become indefinite due to quantization. As a result, the
+               V-cycle only requires relatively few bits of precision per level.
+               Based on our findings, we outline a simple way to implement a
+               progressive-precision full multigrid (FMG) solver with minimal
+               overhead and demonstrate as an example that the one-dimensional
+               biharmonic equation can be solved reliably to any desired
+               accuracy using just a few V-cycles when the underlying smoother
+               works well. Additionally, we show that the progressive-precision
+               scheme leads to memory savings of up to 50\% compared to fixed
+               precision.",
+  month     =  jan,
+  year      =  2021,
+  url       = "https://epubs.siam.org/doi/10.1137/20M1349230",
+  doi       = "10.1137/20m1349230",
+  issn      = "1064-8275,1095-7197",
+  language  = "en"
+}
+
+@ARTICLE{Vicuna2021-cr,
+  title         = "Reducing numerical precision preserves classification
+                   accuracy in Mondrian Forests",
+  author        = "Vicuna, Marc and Khannouz, Martin and Kiar, Gregory and
+                   Chatelain, Yohan and Glatard, Tristan",
+  journal       = "arXiv [cs.LG]",
+  abstract      = "Mondrian Forests are a powerful data stream classification
+                   method, but their large memory footprint makes them
+                   ill-suited for low-resource platforms such as connected
+                   objects. We explored using reduced-precision floating-point
+                   representations to lower memory consumption and evaluated its
+                   effect on classification performance. We applied the Mondrian
+                   Forest implementation provided by OrpailleCC, a C++
+                   collection of data stream algorithms, to two canonical
+                   datasets in human activity recognition: Recofit and Banos
+                   \emph{et al}. Results show that the precision of
+                   floating-point values used by tree nodes can be reduced from
+                   64 bits to 8 bits with no significant difference in F1 score.
+                   In some cases, reduced precision was shown to improve
+                   classification performance, presumably due to its
+                   regularization effect. We conclude that numerical precision
+                   is a relevant hyperparameter in the Mondrian Forest, and that
+                   commonly-used double precision values may not be necessary
+                   for optimal performance. Future work will evaluate the
+                   generalizability of these findings to other data stream
+                   classifiers.",
+  month         =  jun,
+  year          =  2021,
+  url           = "http://arxiv.org/abs/2106.14340",
+  archivePrefix = "arXiv",
+  primaryClass  = "cs.LG",
+  eprint        = "2106.14340"
+}
+
+@MISC{vtune-profiler,
+  title        = "Intel\textregistered{} {VTune\texttrademark{}} Profiler
+                  Release Notes and New Features",
+  author       = "{Intel}",
+  booktitle    = "Intel",
+  abstract     = "See the latest release notes available for
+                  Intel\textregistered{} VTune\texttrademark{} Profiler
+                  (including older versions starting with Intel\textregistered{}
+                  VTune\texttrademark{} Amplifier XE 2017).",
+  howpublished = "\url{https://www.intel.com/content/www/us/en/developer/articles/release-notes/vtune-profiler-release-notes.html}",
+  note         = "Accessed: 2024-2-13",
+  language     = "en"
+}
+
+@ARTICLE{Kurtzer2017-bu,
+  title    = "Singularity: Scientific containers for mobility of compute",
+  author   = "Kurtzer, Gregory M and Sochat, Vanessa and Bauer, Michael W",
+  journal  = "PloS one",
+  volume   =  12,
+  number   =  5,
+  pages    = "e0177459",
+  abstract = "Here we present Singularity, software developed to bring
+              containers and reproducibility to scientific computing. Using
+              Singularity containers, developers can work in reproducible
+              environments of their choosing and design, and these complete
+              environments can easily be copied and executed on other platforms.
+              Singularity is an open source initiative that harnesses the
+              expertise of system and software engineers and researchers alike,
+              and integrates seamlessly into common workflows for both of these
+              groups. As its primary use case, Singularity brings mobility of
+              computing to both users and HPC centers, providing a secure means
+              to capture and distribute software and compute environments. This
+              ability to create and deploy reproducible environments across
+              these centers, a previously unmet need, makes Singularity a game
+              changing development for computational science.",
+  month    =  may,
+  year     =  2017,
+  url      = "http://dx.doi.org/10.1371/journal.pone.0177459",
+  doi      = "10.1371/journal.pone.0177459",
+  pmc      = "PMC5426675",
+  pmid     =  28494014,
+  issn     = "1932-6203",
+  language = "en"
+}
+
+@MISC{ds004513:1.0.2,
+  title     = "The energetic costs of the human connectome",
+  author    = "Castrillon, Gabriel and Epp, Samira and Bose, Antonia and
+               Fraticelli, Laura and Hechler, Andr\'{e} and Belenya, Roman and
+               Ranft, Andreas and Yakushev, Igor and Utz, Lukas and Sundar,
+               Lalith and Rauschecker, Josef P and Preibisch, Christine and
+               Kurcyus, Katarzyna and Riedl, Valentin",
+  publisher = "OpenNeuro",
+  year      =  2023,
+  url       = "https://openneuro.org/datasets/ds004513/versions/1.0.2",
+  doi       = "10.18112/openneuro.ds004513.v1.0.2"
+}
+
+@MISC{noauthor_undated-iw,
+  title       = "{docker2singularity}: A docker image for converting docker
+                 images to singularity images",
+  institution = "Github",
+  abstract    = "A docker image for converting docker images to singularity
+                 images. - singularityhub/docker2singularity",
+  url         = "https://github.com/singularityhub/docker2singularity",
+  language    = "en"
+}
+
+@ARTICLE{Yoo2002-ve,
+  title    = "Engineering and algorithm design for an image processing Api: a
+              technical report on {ITK}--the Insight Toolkit",
+  author   = "Yoo, Terry S and Ackerman, Michael J and Lorensen, William E and
+              Schroeder, Will and Chalana, Vikram and Aylward, Stephen and
+              Metaxas, Dimitris and Whitaker, Ross",
+  journal  = "Studies in health technology and informatics",
+  volume   =  85,
+  pages    = "586--592",
+  abstract = "We present the detailed planning and execution of the Insight
+              Toolkit (ITK), an application programmers interface (API) for the
+              segmentation and registration of medical image data. This public
+              resource has been developed through the NLM Visible Human Project,
+              and is in beta test as an open-source software offering under
+              cost-free licensing. The toolkit concentrates on 3D medical data
+              segmentation and registration algorithms, multimodal and
+              multiresolution capabilities, and portable platform independent
+              support for Windows, Linux/Unix systems. This toolkit was built
+              using current practices in software engineering. Specifically, we
+              embraced the concept of generic programming during the development
+              of these tools, working extensively with C++ templates and the
+              freedom and flexibility they allow. Software development tools for
+              distributed consortium-based code development have been created
+              and are also publicly available. We discuss our assumptions,
+              design decisions, and some lessons learned.",
+  year     =  2002,
+  url      = "https://www.ncbi.nlm.nih.gov/pubmed/15458157",
+  pmid     =  15458157,
+  issn     = "0926-9630",
+  language = "en"
+}
+
+@ARTICLE{Avants2008-ea,
+  title    = "Symmetric diffeomorphic image registration with cross-correlation:
+              evaluating automated labeling of elderly and neurodegenerative
+              brain",
+  author   = "Avants, B B and Epstein, C L and Grossman, M and Gee, J C",
+  journal  = "Medical image analysis",
+  volume   =  12,
+  number   =  1,
+  pages    = "26--41",
+  abstract = "One of the most challenging problems in modern neuroimaging is
+              detailed characterization of neurodegeneration. Quantifying
+              spatial and longitudinal atrophy patterns is an important
+              component of this process. These spatiotemporal signals will aid
+              in discriminating between related diseases, such as frontotemporal
+              dementia (FTD) and Alzheimer's disease (AD), which manifest
+              themselves in the same at-risk population. Here, we develop a
+              novel symmetric image normalization method (SyN) for maximizing
+              the cross-correlation within the space of diffeomorphic maps and
+              provide the Euler-Lagrange equations necessary for this
+              optimization. We then turn to a careful evaluation of our method.
+              Our evaluation uses gold standard, human cortical segmentation to
+              contrast SyN's performance with a related elastic method and with
+              the standard ITK implementation of Thirion's Demons algorithm. The
+              new method compares favorably with both approaches, in particular
+              when the distance between the template brain and the target brain
+              is large. We then report the correlation of volumes gained by
+              algorithmic cortical labelings of FTD and control subjects with
+              those gained by the manual rater. This comparison shows that, of
+              the three methods tested, SyN's volume measurements are the most
+              strongly correlated with volume measurements gained by expert
+              labeling. This study indicates that SyN, with cross-correlation,
+              is a reliable method for normalizing and making anatomical
+              measurements in volumetric MRI of patients and at-risk elderly
+              individuals.",
+  month    =  feb,
+  year     =  2008,
+  url      = "http://dx.doi.org/10.1016/j.media.2007.06.004",
+  doi      = "10.1016/j.media.2007.06.004",
+  pmc      = "PMC2276735",
+  pmid     =  17659998,
+  issn     = "1361-8415,1361-8423",
+  language = "en"
+}
+
+@ARTICLE{Grevera1998-dc,
+  title    = "An objective comparison of 3-{D} image interpolation methods",
+  author   = "Grevera, G J and Udupa, J K",
+  journal  = "IEEE transactions on medical imaging",
+  volume   =  17,
+  number   =  4,
+  pages    = "642--652",
+  abstract = "To aid in the display, manipulation, and analysis of biomedical
+              image data, they usually need to he converted to data of isotropic
+              discretization through the process of interpolation. Traditional
+              techniques consist of direct interpolation of the grey values.
+              When user interaction is called for in image segmentation, as a
+              consequence of these interpolation methods, the user needs to
+              segment a much greater (typically 4-10x) amount of data. To
+              mitigate this problem, a method called shape-based interpolation
+              of binary data was developed 121. Besides significantly reducing
+              user time, this method has been shown to provide more accurate
+              results than grey-level interpolation. We proposed an approach for
+              the interpolation of grey data of arbitrary dimensionality that
+              generalized the shape-based method from binary to grey data. This
+              method has characteristics similar to those of the binary
+              shape-based method. In particular, we showed preliminary evidence
+              that it produced more accurate results than conventional
+              grey-level interpolation methods. In this paper, concentrating on
+              the three-dimensional (3-D) interpolation problem, we compare
+              statistically the accuracy of eight different methods:
+              nearest-neighbor, linear grey-level, grey-level cubic spline,
+              grey-level modified cubic spline, Goshtasby et al., and three
+              methods from the grey-level shape-based class. A population of
+              patient magnetic resonance and computed tomography images,
+              corresponding to different parts of the human anatomy, coming from
+              different three-dimensional imaging applications, are utilized for
+              comparison. Each slice in these data sets is estimated by each
+              interpolation method and compared to the original slice at the
+              same location using three measures: mean-squared difference,
+              number of sites of disagreement, and largest difference. The
+              methods are statistically compared pairwise based on these
+              measures. The shape-based methods statistically significantly
+              outperformed all other methods in all measures in all applications
+              considered here with a statistical relevance ranging from 10\% to
+              32\% (mean = 15\%) for mean-squared difference.",
+  month    =  aug,
+  year     =  1998,
+  url      = "http://dx.doi.org/10.1109/42.730408",
+  doi      = "10.1109/42.730408",
+  pmid     =  9845319,
+  issn     = "0278-0062",
+  language = "en"
+}
+
+@ARTICLE{Avants2020-xx,
+  title     = "Advanced normalization tools ({ANTs})",
+  author    = "Avants, B and Tustison, N and Johnson, Hans J",
+  journal   = "The insight journal",
+  publisher = "psychiatry.ucsd.edu",
+  abstract  = "... This update to ANTs documentation was initiated April 29,
+               2014. This document does not cover all of ANTs functionality --
+               but summarizes the most frequently used components ...",
+  month     =  dec,
+  year      =  2020,
+  url       = "https://psychiatry.ucsd.edu/research/programs-centers/snl/_files/ants2.pdf",
+  doi       = "10.5281/ZENODO.5138159"
+}
+
+@INPROCEEDINGS{Chatelain2019-vw,
+  title     = "Automatic Exploration of Reduced Floating-Point Representations
+               in Iterative Methods",
+  author    = "Chatelain, Yohan and Petit, Eric and de Oliveira Castro, Pablo
+               and Lartigue, Ghislain and Defour, David",
+  booktitle = "Euro-Par 2019: Parallel Processing",
+  publisher = "Springer International Publishing",
+  pages     = "481--494",
+  abstract  = "With the ever-increasing need for computation of scientific
+               applications, new application domains, and major energy
+               constraints, the landscape of floating-point computation is
+               changing. New floating-point representation formats are emerging
+               and there is a need for tools to simulate their impact in legacy
+               codes. In this paper, we propose an automatic tool to evaluate
+               the effect of adapting the floating point precision for each
+               operation over time, which is particularly useful in iterative
+               schemes. We present a backend to emulate any IEEE-754
+               floating-point operation in lower precision. We tested the
+               numerical errors resilience of our solutions thanks to Monte
+               Carlo Arithmetic and demonstrated the effectiveness of this
+               methodology on YALES2, a large Combustion-CFD HPC code, by
+               achieving 28\% to 67\% reduction in communication volume by
+               lowering precision.",
+  year      =  2019,
+  url       = "http://dx.doi.org/10.1007/978-3-030-29400-7_34",
+  doi       = "10.1007/978-3-030-29400-7\_34"
+}
+
+@ARTICLE{Denis2015-zf,
+  title         = "Verificarlo: checking floating point accuracy through Monte
+                   Carlo Arithmetic",
+  author        = "Denis, Christophe and De Oliveira Castro, Pablo and Petit,
+                   Eric",
+  journal       = "arXiv [cs.MS]",
+  abstract      = "Numerical accuracy of floating point computation is a well
+                   studied topic which has not made its way to the end-user in
+                   scientific computing. Yet, it has become a critical issue
+                   with the recent requirements for code modernization to
+                   harness new highly parallel hardware and perform higher
+                   resolution computation. To democratize numerical accuracy
+                   analysis, it is important to propose tools and methodologies
+                   to study large use cases in a reliable and automatic way. In
+                   this paper, we propose verificarlo, an extension to the LLVM
+                   compiler to automatically use Monte Carlo Arithmetic in a
+                   transparent way for the end-user. It supports all the major
+                   languages including C, C++, and Fortran. Unlike
+                   source-to-source approaches, our implementation captures the
+                   influence of compiler optimizations on the numerical
+                   accuracy. We illustrate how Monte Carlo Arithmetic using the
+                   verificarlo tool outperforms the existing approaches on
+                   various use cases and is a step toward automatic numerical
+                   analysis.",
+  month         =  sep,
+  year          =  2015,
+  url           = "http://arxiv.org/abs/1509.01347",
+  archivePrefix = "arXiv",
+  primaryClass  = "cs.MS",
+  eprint        = "1509.01347"
+}
+
+@ARTICLE{Yaniv2018-pv,
+  title     = "{SimpleITK} image-analysis Notebooks: A collaborative environment
+               for education and reproducible research",
+  author    = "Yaniv, Ziv and Lowekamp, Bradley C and Johnson, Hans J and Beare,
+               Richard",
+  journal   = "Journal of digital imaging",
+  publisher = "Springer",
+  volume    =  31,
+  number    =  3,
+  pages     = "290--303",
+  abstract  = "Modern scientific endeavors increasingly require team
+               collaborations to construct and interpret complex computational
+               workflows. This work describes an image-analysis environment that
+               supports the use of computational tools that facilitate
+               reproducible research and support scientists with varying levels
+               of software development skills. The Jupyter notebook web
+               application is the basis of an environment that enables flexible,
+               well-documented, and reproducible workflows via literate
+               programming. Image-analysis software development is made
+               accessible to scientists with varying levels of programming
+               experience via the use of the SimpleITK toolkit, a simplified
+               interface to the Insight Segmentation and Registration Toolkit.
+               Additional features of the development environment include user
+               friendly data sharing using online data repositories and a
+               testing framework that facilitates code maintenance. SimpleITK
+               provides a large number of examples illustrating educational and
+               research-oriented image analysis workflows for free download from
+               GitHub under an Apache 2.0 license:
+               github.com/InsightSoftwareConsortium/SimpleITK-Notebooks .",
+  month     =  jun,
+  year      =  2018,
+  url       = "https://link.springer.com/article/10.1007/s10278-017-0037-8",
+  keywords  = "Image analysis; Open-source software; Python; R; Registration;
+               Segmentation",
+  doi       = "10.1007/s10278-017-0037-8",
+  pmc       = "PMC5959828",
+  pmid      =  29181613,
+  issn      = "0897-1889,1618-727X",
+  language  = "en"
+}
+
+@ARTICLE{Hayford2024-kb,
+  title     = "Speeding up and reducing memory usage for scientific machine
+               learning via mixed precision",
+  author    = "Hayford, Joel and Goldman-Wetzler, Jacob and Wang, Eric and Lu,
+               Lu",
+  journal   = "Computer methods in applied mechanics and engineering",
+  publisher = "Elsevier BV",
+  volume    =  428,
+  number    =  117093,
+  pages     =  117093,
+  month     =  aug,
+  year      =  2024,
+  url       = "https://www.sciencedirect.com/science/article/pii/S0045782524003499?casa_token=UT4I6k9q4HQAAAAA:M0VqNQWZU_dH0lOK9VSSENWHvipy__pxCZDz7U42gMRn_kQamIwuMzidT3GHWmVvnrVowhtGkSNn",
+  doi       = "10.1016/j.cma.2024.117093",
+  issn      = "0045-7825,1879-2138",
+  language  = "en"
+}
