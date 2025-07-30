@@ -5,6 +5,18 @@
 \usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{textcomp}
+\usepackage{booktabs}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=blue,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=blue
+}
+\usepackage{subcaption}
+\captionsetup[subfigure]{singlelinecheck=false, skip=0pt}
 
 % Remove later
 \usepackage{color,soul}
@@ -18,7 +30,7 @@
 \markboth{\journalname, VOL. XX, NO. XX, XXXX 2020}
 {Author \MakeLowercase{\textit{et al.}}: Preparation of Papers for IEEE TRANSACTIONS ON MEDICAL IMAGING}
 \begin{document}
-\title{TODO: Title of the paper}
+\title{An Evaluation of Low Precision Computation in ANTs Registration}
 \author{Dugr\'e Mathieu, Chatelain Yohan, and Glatard Tristan
 \thanks{This paragraph of the first footnote will contain the date on which
 you submitted your paper for review. It will also contain support information,
@@ -56,79 +68,227 @@ Keep the abstract to 250 words or less.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Enter about five key words or phrases in alphabetical order, separated by commas.
+Image registration, Reduced precision, ANTs, MRI, Performance
 \end{IEEEkeywords}
 
 \section{Introduction}
 \label{sec:introduction}
-% - Dugr\'e et al. 2025
+Image registration transforms a pair or collection of images to a common space, enabling comparison between those images. It is a critical step in magnetic resonance imaging (MRI) processing pipeline as it enable the comparison of images acquired at different times, from different subjects, or from different modalities. Therefore, allowing for longitudianal studies, group analysis, or multi-modal imaging. By consequence, registration is an important step in the Advanced Normalization Tools (ANTs) registration pipeline~\cite{?}, which is widely used in the neuroimaging community.
 
-% Context & Problem
+MRI registration incurs a significant computational cost, often accounting for a majority of the runtime for MRI processing pipelines. As a result, optimizing registration performance is crucial for improving the overall efficiency of MRI processing---enabling studies with larger cohorts and clinical applications requiring processing in timely manner. Our previous study~\cite{Dugre2025-fs} identified two primary performance bottlenecks in MRI processing pipelines: (1) interpolation computation and (2) memory bandwidth limitations.
 
-% Importance
+Reduced precision arithmetic leverages a mix of high- and low-precision data formats to accelerate applications while maintaining acceptable accuracy. It has the potential to alleviate both bottlenecks. First, arithmetic operation on lower bit-width are faster. Second, reduced precision formats reduce the memory footprint of the data, thus reducing the load on memory bandwidth.
 
-% Challenges
+%% Instability
+\MD{TODO: Add discussion on numerical instability.}
 
-% Approach
+In this paper, we conduct a detailed analysis of reduced precision formats in the context of the Advanced Normalization Tools (ANTs) registration pipeline~\cite{?}. This work contributes to the understanding and application of reduced precision formats in MRI registration by doing the following:
+\begin{itemize}
+    \item Theoretical analysis of minimum precision in ANTs registration
+    \item Empirical evaluation of reduced precision formats in ANTs registration
+    \item Fix casting bug in ITK to enable single precision interpolation
+    \item Performance evaluation of ANTs registration using single precision
+\end{itemize}
 
-% Contribution
-
-% Outline
+We organize the remaining of this paper as follows. Section~\ref{sec:related-work} discusses related work on reduced precision computation, deep learning quantization, and numerical instability in ANTs registration. Section~\ref{sec:method} describes the ANTs registration pipeline, our theoretical analysis of minimum precision, and our empirical experiments using VPREC to simulate arbitrary data formats. Finally, we discuss and report our results in Section~\ref{sec:discussion} and Section~\ref{sec:results}, respectively. Section~\ref{sec:conclusion} concludes the paper.
 
 
 \section{Related Work}
-\label{sec:related}
-\subsection{Deep learning quantization techniques}
+\label{sec:related-work}
+\subsection{Simulating Reduced Precision Computation}
+Reduced precision computing a data format that represents numbers with fewer bits for the exponent, mantissa, or both, compared to FP64.
+To further accelerate the runtime performance of applications, mixed precision computing varies the data formats used across the space or time of a program, enabling further precision tuning. While the \textit{binary64} (FP64) and \textit{binary32} (FP32) formats defined by the IEEE-754 standard~\cite{Zuras2008-eg} are ubiquitous, exploiting low-precision formats has the potential to accelerate applications. Several studies explored the use of low-precision data types to perform computations~\cite{Cherubin2020-tz}. The logic complexity of floating point units is near-proportional to the square of the bit width~\cite{Chen2018-ge}. Therefore, lowering the number of bits in a data format also reduces the die size of a chip, computation time, and the energy cost for arithmetic operations. Reduced and mixed precision computing improves runtime of application with a potential trade off in numerical accuracy.
+
+Popular DL frameworks such as TensorFlow~\cite{Abadi2016-vm} and PyTorch~\cite{Paszke2019-vk} provide mixed precision support via their API, which automatically casts the data types based on the operation performed and underlying hardware capabilities. Both frameworks support the \textit{binary32} (FP32) and \textit{binary16} (FP16), as well as the \textit{bfloat16} (BF16) format~\cite{Wang2019-qe}. Figure~\ref{fig:bfloat16} depicts exponent and mantissa bit width for these formats. Since BF16 shares the same exponent range as FP32, conversions between the two formats are efficient---requiring only bit truncation or padding. Because of its reduced mantissa width, BF16 multipliers occupy roughly half the area of FP16 hardware units and are about eight times smaller than their FP32 counterparts~\cite{Wang2019-qe}. Importantly, as neural networks are more sensitive to exponent range than mantissa precision, BF16 maintains performance while significantly reducing hardware complexity.
+
+\begin{figure}[htb!]
+	\centering
+	\includegraphics[width=0.8\columnwidth]{figures/bfloat16.png}
+	\caption{Representation of the bfloat16 format. (Taken from~\cite{Google2024-pq})}
+	\label{fig:bfloat16}
+\end{figure}
+
+\subsection{Simulated Reduced Precision}
+Commodity hardware supports only a limited set of prevalent data formats---most commonly, FP64, FP32, FP16, and BF16. Designing custom hardware to support additional formats is expensive, especially when evaluating multiple alternatives. As a result, researchers often resort to simulating arbitrary precision formats to study their performance characteristics. For instance, Higham et al.~\cite{Higham2019-xu} implemented a reduced precision library in MATLAB, while Zhang et al.~\cite{Zhang2019-ry} developed a high-level framework on top of PyTorch to facilitate reduced precision techniques. Chatelain et al.~\cite{Chatelain2019-vw} explored the use of reduced precision to reduce communication costs in iterative methods. They used the VPREC backend in Verificarlo~\cite{Denis2015-zf} to simulate reduced precision, employing a heuristic to determine the minimum precision at different iterations. Using VPREC requires re-compiling the application with Verificarlo, but does not require inserting probes into the code.
+
+The primary advantage of simulating reduced precision is the low implementation cost, as it eliminates the need for new hardware design. This allows researchers to explore many data formats with low effort. However, while simulation is useful for accuracy evaluation, assessing runtime performance remains a challenge. However, simulating arbitrary precision formats incurs an overhead cost ranging from $2.6\times$ to $16.8\times$ slowdown for VPREC~\cite{Chatelain2019-vw}. By consequence, simulations motivate developing new hardware or software solutions, rather than as a means for performance optimization.
 
 
-\subsection{Performance bottlenecks in ANTs registration}
-% - Dugr\'e et al. 2025
-% Interpolation and memory bounds. Can both benefit from quantization.
+\subsection{Quantization in Deep Learning}
 
 
-\subsection{Numerical stability of ANTs registration}
+\subsection{Numerical Stability of ANTs Registration}
 % Niusha's work on numerical stability of ANTs registration (Linear only)
-
 
 
 \section{Method}
 \label{sec:method}
 \subsection{ANTs registration SyN}
+ANTs registration is a multi-stage, multi-resolution iterative optimization pipeline that transforms a moving image to align it to a fixed image (i.e., template). By default, there are three registration stages---rigid, affine, and SyN---with four resolution levels each. Additionally, an initial alignment uses the intensity of the moving image to align it to the template.
+
+The rigid and affine stages use mutual information (MI) as the objective function, while the SyN stage uses cross-correlation (CC). All registration stages operate over four levels of multi-resolution, with shrink factors of $8\times4\times2\times1$ and corresponding Gaussian smoothing sigmas $3\times2\times1\times0$ applied at each resolution level, respectively. At each level, ANTs smooths the images prior to down-sampling. The registration process terminates when the optimization reaches the maximum number of iterations, specific to each stage-level pair, or the objective function converges to a threshold of $1\times10^{-6}$ over the last 10 iterations.
+
+Although ANTs provides a flag to enable single-precision computation, our previous study~\cite{Dugre2025-fs} identified a bug in ITK\footnote{\url{https://github.com/InsightSoftwareConsortium/ITK/issues/4593}} causing interpolation operations to always execute in double precision---regardless of compilation or runtime settings. Thus, the single-precision mode in ANTs is impractical because of the additional casting overhead, resulting in performance degradation compared to the double precision version of the pipeline.
 
 \subsection{Theoretical analysis of minimum precision}
 % - Hayford et al. 2024
+Hayford et al.~\cite{Hayford2024-kb} proposed a theoretical framework to analyze the effect of rounding error in BF16 arithmetic on the convergence of gradient-based optimization. A key theorem from their work guarantees that if the optimization does not converge to the minimum, then the loss gradient norm $\|\nabla \mathcal{L}\|$ will decrease below a theoretical threshold---dependent on the precision of the data format.
+
+The authors model the reduced precision gradient descent as follows. Suppose that $\theta$ are the parameters of the optimization, $\mathcal{L}(\theta)$ is the loss function, and $\eta$ is the learning rate. In a reduced precision setting, the gradient descent update is given by:
+\begin{equation}
+	\theta \leftarrow \theta - \eta \nabla\mathcal{L}(\theta + \delta\theta)
+\end{equation}
+where $\delta\theta$ is the error introduced by the reduced precision format---with $p$ bits of precision---that satisfies $\|\delta\theta\| \leq 2^{-p} \|\theta\|$.
+
+% Assumptions
+% TODO: Improve clarity of Assumption #2
+Given the following assumptions are satisfied:
+\begin{enumerate}
+	\item $\mathcal{L}$ is convex;
+	\item $\nabla \mathcal{L}$ is Lipschitz continuous with the best constant $L < \frac{1}{\eta} $; i.e., there exists a constant $L$ such that for all $x$ and $y$, we have:
+	\begin{equation}
+		\|\nabla \mathcal{L}(x) - \nabla \mathcal{L}(y)\| \leq L \|x - y\|.
+	\end{equation}
+\end{enumerate}
+
+% Proof
+The theorem shows that if the model does not converge to the minimum, then it will reach a critical zone bounding the loss gradient norm as follows:
+\begin{equation}
+	\|\nabla \mathcal{L}(\theta)\| \leq \frac{4+3\sqrt{2}}{2^{p}} L \|\theta\|.
+\end{equation}
+The constant $\frac{4+3\sqrt{2}}{2^{p}}$ is a conservative symbolic bound derived from solving a quadratic inequality to guarantee a decrease in gradient despite the noise introduced by a reduced precision.
+
+% Empirical Validation
+The authors from the original study~\cite{Hayford2024-kb} empirically validate their theoretical model using a one-dimensional diffusion equation. They use a first-order finite difference method to estimate the Lipschitz constant at each iteration:
+\begin{equation}
+	L \approx \frac{\|\nabla \mathcal{L}(\theta_{t+1}) - \nabla \mathcal{L}(\theta_t)\|}{\|\theta_{t+1} - \theta_t\|}.
+\end{equation}
+
+% Relevance to our work
+Although Hayford et al. derived this theorem in the context of deep learning, the result applies more broadly to gradient descent-based optimization---including in ANTs registration. Our aim is to ensure convergence of the pipeline when using reduced-precision formats. By contraposition of Hayford's result, a sufficient condition to convergence is for the gradient norm to exceed the precision-dependent threshold:
+\begin{equation}
+	\|\nabla \mathcal{L}(\theta)\| > \frac{4+3\sqrt{2}}{2^{p}} L \|\theta\|.
+\end{equation}
+\label{eq:hayford-contraposition}
+
+% p_min
+It follows that:
+\begin{equation}
+    p > p_{min} = \log_2 \left( \frac{4+3\sqrt{2}}{\|\nabla\mathcal{L}(\theta)\|} L \|\theta\| \right)
+\end{equation}
+\label{eq:hayford-pmin}
+
+where $p_{min}$ is the minimum precision required to guarantee convergence. Using $p_{min}$ could enable precision tuning of the pipeline after a single execution. It could also enable dynamic adjustment of precision at each iteration, based on data quality and the local smoothness of the loss function.
 
 \subsection{Evaluation of arbitrary data formats using VPREC}
+To explore the impact of reduced precision, we used Verificarlo with the VPREC backend to simulate reduced precision via compile-time instrumentation. We evaluated all combinations of exponent range (6-8 bits) and precision (6-23 bits), as well as the default (Float64) version of the pipeline.
+
+On the one hand, registration failure at any stage may affect subsequent stages, calling for a higher precision in early stages. On the other hand, higher resolution or more complex stages likely require greater precision to ensure convergence. Thus, we tested precision reduction both from initial alignment to SyN and from SyN to initial alignment, as detailed in Table~\ref{tab:exp_combinations}.
+
+We recompiled ANTs\footnote{\url{https://github.com/mathdugre/ANTs/tree/paper-base-vprec}} and ITK with Verficarlo, enabling simulation of reduced precision at runtime using VPREC. We disabled instrumentation of all modules and functions involved in metric computations, as low-precision instrumentation in these components caused the pipeline to crash due to metric values and convergence rates deviating from expected range.
+
+\begin{table}[t]
+    \centering
+    \begin{tabular}{@{}ccccc@{}}
+    \toprule
+    \multicolumn{1}{c}{Experiment ID} & \begin{tabular}[c]{@{}c@{}}Initialization\\ (Moving)\end{tabular} & Rigid & Affine & SyN \\ \midrule
+    1111 & 1 & 1 & 1 & 1 \\
+    0000 & 0  & 0  & 0  & 0  \\
+    0001 & 0  & 0  & 0  & 1 \\
+    0011 & 0  & 0  & 1  & 1 \\
+    0111 & 0  & 1  & 1 & 1 \\
+    0110 & 0  & 1  & 1 & 0 \\
+    0100 & 0  & 1  & 0 & 0 \\
+    \bottomrule
+    \end{tabular}
+    \caption{Experiment variations of original and VPREC-instrumented stages. We encode the experiment ID as a four digit binary sequence where 0 indicates default precision (Float64) and 1 indicates reduced precision at each stage: (1) initialization, (2) rigid, (3) affine, (4) SyN.}
+    \label{tab:exp_combinations}
+\end{table}
 
 \subsection{Dataset}
+\MD{TODO: Add dataset description. Might want to use a different dataset with better quality.}
 
 \subsection{Infrastructure}
+We ran our experiments on the \textit{Narval} cluster from Compute Canada. To enhance reproducibility and HPC support, we containerized all pipeline versions using Docker and converted them to Apptainer images using Docker2Singularity.
+
+To ensure reproducibility across different systems, we disabled architecture-specific instructions when compiling ITK and ANTs with Verificarlo.
 
 
-\section{Experiments}
-\label{sec:experiments}
+% \section{Experiments}
+% \label{sec:experiments}
 
 
 \section{Results}
 \label{sec:results}
 \subsection{Estimating theoretical bounds on ANTs convergence}
+Figure~\ref{fig:ants-pmin} shows the minimum data format precision required for ANTs to converge at each iteration. We compute $p_{min}$ using Equation~\ref{eq:hayford-pmin}. Our results indicate that the convergence of ANTs is mostly unaffected when using FP32 format, with only a minimal set of iterations lacking convergence guarantee. This suggests that FP32 could be used across the entire ANTs pipeline without loss in accuracy,resulting in significant speed up.
 
+The FP24 format exhibits lower convergence guarantee in the affine stage---level one, two, and three---especially for the last. The last rigid level show similar effect. By consequence, the format may be used to accelerate some registration stages---such as, rigid level 0, 1, and 2, and affine level 0---but may result in accuracy degradation when used across the entire pipeline.
+
+Using TF32 or BF16 provide no guarantee on the convergence of ANTs, across all stages and resolution levels. Thus, those data formats are not suitable to accelerate registration stages. However, future work could explore leveraging TF32 or BF16 to speed up a subset of early iterations within each stages, where the formats still guarantee convergence at those iterations.
+\begin{figure*}[htb!]
+	\centering
+	\includegraphics[width=\textwidth]{figures/hayford-pmin.pdf}
+	\caption{Minimum precision required for converge in ANTs registration. We highlight precision with hardware support as dotted horizontal lines.}
+	\label{fig:ants-pmin}
+\end{figure*}
+
+The current modification we made to ITK and the ANTs pipeline allow us to estimate a Lipschitz constant, loss gradient norm, and parameter norm at each iteration. While our modification works well for the rigid and affine stages, it fails to probe the SyN stage, which always returns a value of zero for the parameters norm. This is likely due to the different algorithm in SyN stage, which computes a displacement vector at each voxel rather than a transformation matrix. We plan to further investigate this issue and adapt our probing method to work with the SyN stage.
+
+Our current estimation of $p_{min}$ is based on a single subject. In future work, we plan to use an aggregation across all subjects to improve the estimation.
 
 \subsection{Data format space search}
+Figure~\ref{fig:ants-space-search} depicts the relative difference in similarity metrics compared to FP64 across various combinations of exponent range and precision.
 
+We omit some configurations for the SyN and Affine stages, since the observed behaviors are consistent across all stages of a same type as long as the instrumentation of the stage remains the same.
+
+Our results show no observable differences between exponent ranges of 7 and 8 bits. However, lowering the exponent range to 6 bits causes the application to crash or become unresponsive. Similarly, using 6-bit precision causes the pipeline to hang, regardless of the range. These behaviors appear across all stages and subjects.
+
+Our theoretical analysis in Section~\ref{sec:rp-theoretical-analysis} shows that the convergence of ANTs is mostly unaffected by FP32 and FP24 formats, while TF32 and BF16 formats have no convergence guarantee. Our empirical results (Figure~\ref{subfig:ants-0111}) align with this analysis; we observe no significant difference in the similarity metric when using FP32 and FP24 formats, while TF32 and BF16 formats show a significant degradation in the similarity metric.
+\begin{figure*}[htb!]
+	\centering
+    \begin{subfigure}[t]{\textwidth}
+		\caption{[01xx] Rigid (MI)}
+		\label{subfig:ants-01xx}
+		\includegraphics[width=\textwidth]{figures/0111-rigid-metric_rel_diff-mean.pdf}
+	\end{subfigure}
+	\begin{subfigure}[t]{\textwidth}
+		\caption{[011x] Affine (MI)}
+		\label{subfig:ants-011x}
+		\includegraphics[width=\textwidth]{figures/0111-affine-metric_rel_diff-mean.pdf}
+	\end{subfigure}
+	\begin{subfigure}[t]{\textwidth}
+		\caption{[0111] SyN (CC)}
+		\label{subfig:ants-0111}
+		\includegraphics[width=\textwidth]{figures/0111-syn-metric_rel_diff-mean.pdf}
+	\end{subfigure}
+	\begin{subfigure}[t]{\textwidth}
+		\caption{[0110] SyN (CC)}
+		\label{subfig:ants-0110}
+		\includegraphics[width=\textwidth]{figures/0110-syn-metric_rel_diff-mean.pdf}
+	\end{subfigure}
+	\caption{Relative difference in similarity metric compared to FP64. We report the mean and standard deviation across subjects $(N=20)$. The x-axis and y-axis show the simulated number of bits for the precision and range, respectively. The colorscale indicates how much the metric differs with FP64---red is worse, green is better, and white indicates equivalence with FP64---with the color intensity representing the magnitude of the relative difference. Data formats with hardware support have a black border---Float32~(r8-p23), Float24~(r7-p16), TensorFloat32~(r8-p10), and BFloat16~(r8-p7).}
+	\label{fig:ants-space-search}
+\end{figure*}
 
 \subsection{Performance evaluation of ANTs using single precision}
-
+\MD{TODO: WIP: Solving ITK bug to enable single precision in ANTs.}
 
 \section{Discussion}
 \label{sec:discussion}
 % Catastrophic failure with low precision initialization
+% TODO: Figure in supplementary materials
+Preliminary results showed that using low precision for the initial alignment often caused unrecoverable registration failures, resulting in a large chunk of the brain missing. Consequently, we included only the \textit{1111} configuration—where all stages run in reduced precision—to evaluate this scenario explicitly.
 
 % Assumptions on loss function convexity
-
 % 
 
 
+% Norm calculation
+We used the two-norm across all of our computations, consistent with the approach in~\cite{Hayford2024-kb}. While this ensure methodological alignment, we acknowledge that the norm two does not account for the different units and variabilities from our transformation parameters. Thus, we plan to investigate the impact from using a Mahalanobis norm that accounts for parameters scaling in future work.
+
+% Mixed precision instead of reduced precision
+% What would be the benefits and challenges of using mixed precision in this context?
 
 
 \section{Conclusion}
@@ -157,5 +317,6 @@ like to thank $\ldots$ .'' Instead, write ``F. A. Author thanks $\ldots$ .'' In 
 cases, sponsor and financial support acknowledgments are placed in the 
 unnumbered footnote on the first page, not here.
 
-\bibliography{paper}
+\bibliography{paper.bib}
+\bibliographystyle{IEEEtran}
 \end{document}
