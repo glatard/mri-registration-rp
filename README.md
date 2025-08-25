@@ -2,7 +2,7 @@
 
 
 ## Steps to replicate our experiments
-- [ ] Download Apptainer images
+- [ ]
 - [ ] Modify env var in prepare-exp.sh and run-all.sh scripts
 - [ ] 
 

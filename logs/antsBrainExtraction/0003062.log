@@ -1,0 +1,2455 @@
+
+Will run Atropos segmentation with K=3. Classes labeled in order of mean intensity. Assuming CSF=1, GM=2, WM=3
+
+
+    Using antsBrainExtraction with the following arguments:
+      image dimension         = 3
+      anatomical image        = /data/sub-0003062/ses-1/anat/sub-0003062_ses-1_run-1_T1w.nii.gz
+      extraction template     = /opt/templates/OASIS/T_template0.nii.gz
+      extraction reg. mask    = 
+      extraction prior        = /opt/templates/OASIS/T_template0_BrainCerebellumProbabilityMask.nii.gz
+      output prefix           = /data/derivatives/antsBrainExtraction/sub-0003062/
+      output image suffix     = nii.gz
+
+    antsAI parameters (initial alignment):
+      rotation search params  = 20,0.12
+      translation search params = 40,0x40x40
+
+    N4 parameters (pre brain extraction):
+      convergence             = [ 50x50x50x50,0.0000001 ]
+      shrink factor           = 4
+      B-spline parameters     = [ 1x1x1, 3 ]
+
+    Atropos parameters (extraction):
+       convergence            = [ 3,0.0 ]
+       likelihood             = Gaussian
+       initialization         = kmeans[ 3 ]
+       mrf                    = [ 0.1,1x1x1 ]
+       use clock random seed  = 1
+
+---------------------  Running antsBrainExtraction.sh on rc32426  ---------------------
+
+--------------------------------------------------------------------------------------
+ Bias correction of anatomical images (pre brain extraction)
+   1) pre-process by truncating the image intensities
+   2) run N4
+--------------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------------
+ Done with N4 correction (pre brain extraction):  0h 0m 0s
+--------------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------------
+ Brain extraction using the following steps:
+   1) Register /opt/templates/OASIS/T_template0.nii.gz to /data/derivatives/antsBrainExtraction/sub-0003062/N4Corrected0.nii.gz
+   2) Warp /opt/templates/OASIS/T_template0_BrainCerebellumProbabilityMask.nii.gz to /data/sub-0003062/ses-1/anat/sub-0003062_ses-1_run-1_T1w.nii.gz using, from 1),
+      /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionWarp/Affine
+   3) Refine segmentation results using Atropos
+--------------------------------------------------------------------------------------
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionLaplacian.nii.gz Laplacian /data/derivatives/antsBrainExtraction/sub-0003062/N4Corrected0.nii.gz 1.5 1
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionTemplateLaplacian.nii.gz Laplacian /opt/templates/OASIS/T_template0.nii.gz 1.5 1
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+SmoothImage 3 /opt/templates/OASIS/T_template0.nii.gz 4 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffineFixed.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+SmoothImage 3 /data/derivatives/antsBrainExtraction/sub-0003062/N4Corrected0.nii.gz 4 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffineMoving.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ResampleImageBySpacing 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffineFixed.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffineFixed.nii.gz 5 5 5 0
+ spacing [1, 1, 1] dim 3
+ spacing2 [5, 5, 5]
+ out space [5, 5, 5]
+ output size [43, 51, 58] spc [5, 5, 5]
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ResampleImageBySpacing 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffineMoving.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffineMoving.nii.gz 5 5 5 0
+ spacing [1, 1, 1] dim 3
+ spacing2 [5, 5, 5]
+ out space [5, 5, 5]
+ output size [35, 51, 51] spc [5, 5, 5]
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+antsAI -d 3 -v 1 -m Mattes[ /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffineFixed.nii.gz,/data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffineMoving.nii.gz,32,Regular,0.2 ] -t Affine[ 0.1 ] -s [ 20,0.12 ] -g [ 40,0x40x40 ] -p 0 -c 10 -o /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffine.mat
+Using the Mattes MI metric (number of bins = 32)
+Starting optimizer with 243 starting points
+
+Iteration/Total,MetricValue
+24/243,-0.539268
+48/243,-0.607738
+72/243,-0.48689
+96/243,-0.537506
+120/243,-0.61208
+144/243,-0.461448
+168/243,-0.543829
+192/243,-0.606248
+216/243,-0.489827
+240/243,-0.444422
+
+Optimization complete. Best metric value: -0.617031
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+antsRegistration -d 3 -u 1 -w [ 0.025,0.975 ] -o /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPrior -r /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffine.mat -z 1 --float 0 --verbose 1 -m MI[ /opt/templates/OASIS/T_template0.nii.gz,/data/derivatives/antsBrainExtraction/sub-0003062/N4Corrected0.nii.gz,1,32,Regular,0.25 ] -c [ 1000x500x250x100,1e-8,10 ] -t Rigid[ 0.1 ] -f 8x4x2x1 -s 4x2x1x0 -m MI[ /opt/templates/OASIS/T_template0.nii.gz,/data/derivatives/antsBrainExtraction/sub-0003062/N4Corrected0.nii.gz,1,32,Regular,0.25 ] -c [ 1000x500x250x100,1e-8,10 ] -t Affine[ 0.1 ] -f 8x4x2x1 -s 4x2x1x0 -m CC[ /opt/templates/OASIS/T_template0.nii.gz,/data/derivatives/antsBrainExtraction/sub-0003062/N4Corrected0.nii.gz,0.5,4 ] -m CC[ /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionTemplateLaplacian.nii.gz,/data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionLaplacian.nii.gz,0.5,4 ] -c [ 50x10x0,1e-9,15 ] -t SyN[ 0.1,3,0 ] -f 4x2x1 -s 2x1x0
+All_Command_lines_OK
+Using double precision for computations.
+=============================================================================
+The composite transform comprises the following transforms (in order): 
+  1. /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffine.mat (type = AffineTransform)
+=============================================================================
+  number of levels = 4
+  number of levels = 4
+  number of levels = 3
+  fixed image: /opt/templates/OASIS/T_template0.nii.gz
+  moving image: /data/derivatives/antsBrainExtraction/sub-0003062/N4Corrected0.nii.gz
+  fixed image: /opt/templates/OASIS/T_template0.nii.gz
+  moving image: /data/derivatives/antsBrainExtraction/sub-0003062/N4Corrected0.nii.gz
+  fixed image: /opt/templates/OASIS/T_template0.nii.gz
+  moving image: /data/derivatives/antsBrainExtraction/sub-0003062/N4Corrected0.nii.gz
+  fixed image: /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionTemplateLaplacian.nii.gz
+  moving image: /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionLaplacian.nii.gz
+Dimension = 3
+Number of stages = 3
+Use histogram matching = true
+Winsorize image intensities = true
+  Lower quantile = 0.025
+  Upper quantile = 0.975
+
+
+Stage 1 State
+   Image metric = MattesMI
+     Fixed image = Image (0x5555a99ae910)
+  RTTI typeinfo:   itk::Image<double, 3u>
+  Reference Count: 2
+  Modified Time: 1610
+  Debug: Off
+  Object Name: 
+  Observers: 
+    none
+  Source: (none)
+  Source output name: (none)
+  Release Data: Off
+  Data Released: False
+  Global Release Data: Off
+  PipelineMTime: 0
+  UpdateMTime: 1221
+  RealTimeStamp: 0 seconds 
+  LargestPossibleRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [216, 256, 291]
+  BufferedRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [216, 256, 291]
+  RequestedRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [216, 256, 291]
+  Spacing: [1, 1, 1]
+  Origin: [0, 293, 0]
+  Direction: 
+1 0 0
+0 -0 -1
+0 -1 0
+
+  IndexToPointMatrix: 
+1 0 0
+0 0 -1
+0 -1 0
+
+  PointToIndexMatrix: 
+1 0 0
+0 0 -1
+0 -1 0
+
+  Inverse Direction: 
+1 0 0
+0 0 -1
+0 -1 0
+
+  PixelContainer: 
+    ImportImageContainer (0x5555a99cd390)
+      RTTI typeinfo:   itk::ImportImageContainer<unsigned long, double>
+      Reference Count: 1
+      Modified Time: 1218
+      Debug: Off
+      Object Name: 
+      Observers: 
+        none
+      Pointer: 0x1535749e8010
+      Container manages memory: true
+      Size: 16091136
+      Capacity: 16091136
+
+     Moving image = Image (0x5555a99ba760)
+  RTTI typeinfo:   itk::Image<double, 3u>
+  Reference Count: 2
+  Modified Time: 1611
+  Debug: Off
+  Object Name: 
+  Observers: 
+    none
+  Source: (none)
+  Source output name: (none)
+  Release Data: Off
+  Data Released: False
+  Global Release Data: Off
+  PipelineMTime: 0
+  UpdateMTime: 1608
+  RealTimeStamp: 0 seconds 
+  LargestPossibleRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [176, 256, 256]
+  BufferedRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [176, 256, 256]
+  RequestedRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [176, 256, 256]
+  Spacing: [1, 1, 1]
+  Origin: [-88.262, 86.3324, -129.41]
+  Direction: 
+1 0 0
+0 -1 0
+0 0 1
+
+  IndexToPointMatrix: 
+1 0 0
+0 -1 0
+0 0 1
+
+  PointToIndexMatrix: 
+1 0 0
+0 -1 0
+0 0 1
+
+  Inverse Direction: 
+1 0 0
+0 -1 0
+0 0 1
+
+  PixelContainer: 
+    ImportImageContainer (0x5555a9a352d0)
+      RTTI typeinfo:   itk::ImportImageContainer<unsigned long, double>
+      Reference Count: 1
+      Modified Time: 1605
+      Debug: Off
+      Object Name: 
+      Observers: 
+        none
+      Pointer: 0x15356f1e7010
+      Container manages memory: true
+      Size: 11534336
+      Capacity: 11534336
+
+     Weighting = 1
+     Sampling strategy = regular
+     Number of bins = 32
+     Radius = 4
+     Sampling percentage  = 0.25
+   Transform = Rigid
+     Gradient step = 0.1
+     Update field sigma (voxel space) = 0
+     Total field sigma (voxel space) = 0
+     Update field time sigma = 0
+     Total field time sigma  = 0
+     Number of time indices = 0
+     Number of time point samples = 0
+Stage 2 State
+   Image metric = MattesMI
+     Fixed image = Image (0x5555a99c9f10)
+  RTTI typeinfo:   itk::Image<double, 3u>
+  Reference Count: 2
+  Modified Time: 2386
+  Debug: Off
+  Object Name: 
+  Observers: 
+    none
+  Source: (none)
+  Source output name: (none)
+  Release Data: Off
+  Data Released: False
+  Global Release Data: Off
+  PipelineMTime: 0
+  UpdateMTime: 1997
+  RealTimeStamp: 0 seconds 
+  LargestPossibleRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [216, 256, 291]
+  BufferedRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [216, 256, 291]
+  RequestedRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [216, 256, 291]
+  Spacing: [1, 1, 1]
+  Origin: [0, 293, 0]
+  Direction: 
+1 0 0
+0 -0 -1
+0 -1 0
+
+  IndexToPointMatrix: 
+1 0 0
+0 0 -1
+0 -1 0
+
+  PointToIndexMatrix: 
+1 0 0
+0 0 -1
+0 -1 0
+
+  Inverse Direction: 
+1 0 0
+0 0 -1
+0 -1 0
+
+  PixelContainer: 
+    ImportImageContainer (0x5555a9b5b1d0)
+      RTTI typeinfo:   itk::ImportImageContainer<unsigned long, double>
+      Reference Count: 1
+      Modified Time: 1994
+      Debug: Off
+      Object Name: 
+      Observers: 
+        none
+      Pointer: 0x153567722010
+      Container manages memory: true
+      Size: 16091136
+      Capacity: 16091136
+
+     Moving image = Image (0x5555a9a30ac0)
+  RTTI typeinfo:   itk::Image<double, 3u>
+  Reference Count: 2
+  Modified Time: 2387
+  Debug: Off
+  Object Name: 
+  Observers: 
+    none
+  Source: (none)
+  Source output name: (none)
+  Release Data: Off
+  Data Released: False
+  Global Release Data: Off
+  PipelineMTime: 0
+  UpdateMTime: 2384
+  RealTimeStamp: 0 seconds 
+  LargestPossibleRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [176, 256, 256]
+  BufferedRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [176, 256, 256]
+  RequestedRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [176, 256, 256]
+  Spacing: [1, 1, 1]
+  Origin: [-88.262, 86.3324, -129.41]
+  Direction: 
+1 0 0
+0 -1 0
+0 0 1
+
+  IndexToPointMatrix: 
+1 0 0
+0 -1 0
+0 0 1
+
+  PointToIndexMatrix: 
+1 0 0
+0 -1 0
+0 0 1
+
+  Inverse Direction: 
+1 0 0
+0 -1 0
+0 0 1
+
+  PixelContainer: 
+    ImportImageContainer (0x5555a9bbb250)
+      RTTI typeinfo:   itk::ImportImageContainer<unsigned long, double>
+      Reference Count: 1
+      Modified Time: 2381
+      Debug: Off
+      Object Name: 
+      Observers: 
+        none
+      Pointer: 0x153561f21010
+      Container manages memory: true
+      Size: 11534336
+      Capacity: 11534336
+
+     Weighting = 1
+     Sampling strategy = regular
+     Number of bins = 32
+     Radius = 4
+     Sampling percentage  = 0.25
+   Transform = Affine
+     Gradient step = 0.1
+     Update field sigma (voxel space) = 0
+     Total field sigma (voxel space) = 0
+     Update field time sigma = 0
+     Total field time sigma  = 0
+     Number of time indices = 0
+     Number of time point samples = 0
+Stage 3 State
+   Image metric = CC
+     Fixed image = Image (0x5555a99cb560)
+  RTTI typeinfo:   itk::Image<double, 3u>
+  Reference Count: 2
+  Modified Time: 3162
+  Debug: Off
+  Object Name: 
+  Observers: 
+    none
+  Source: (none)
+  Source output name: (none)
+  Release Data: Off
+  Data Released: False
+  Global Release Data: Off
+  PipelineMTime: 0
+  UpdateMTime: 2773
+  RealTimeStamp: 0 seconds 
+  LargestPossibleRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [216, 256, 291]
+  BufferedRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [216, 256, 291]
+  RequestedRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [216, 256, 291]
+  Spacing: [1, 1, 1]
+  Origin: [0, 293, 0]
+  Direction: 
+1 0 0
+0 -0 -1
+0 -1 0
+
+  IndexToPointMatrix: 
+1 0 0
+0 0 -1
+0 -1 0
+
+  PointToIndexMatrix: 
+1 0 0
+0 0 -1
+0 -1 0
+
+  Inverse Direction: 
+1 0 0
+0 0 -1
+0 -1 0
+
+  PixelContainer: 
+    ImportImageContainer (0x5555a9c1b350)
+      RTTI typeinfo:   itk::ImportImageContainer<unsigned long, double>
+      Reference Count: 1
+      Modified Time: 2770
+      Debug: Off
+      Object Name: 
+      Observers: 
+        none
+      Pointer: 0x15355a45c010
+      Container manages memory: true
+      Size: 16091136
+      Capacity: 16091136
+
+     Moving image = Image (0x5555a9a38e20)
+  RTTI typeinfo:   itk::Image<double, 3u>
+  Reference Count: 2
+  Modified Time: 3163
+  Debug: Off
+  Object Name: 
+  Observers: 
+    none
+  Source: (none)
+  Source output name: (none)
+  Release Data: Off
+  Data Released: False
+  Global Release Data: Off
+  PipelineMTime: 0
+  UpdateMTime: 3160
+  RealTimeStamp: 0 seconds 
+  LargestPossibleRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [176, 256, 256]
+  BufferedRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [176, 256, 256]
+  RequestedRegion: 
+    Dimension: 3
+    Index: [0, 0, 0]
+    Size: [176, 256, 256]
+  Spacing: [1, 1, 1]
+  Origin: [-88.262, 86.3324, -129.41]
+  Direction: 
+1 0 0
+0 -1 0
+0 0 1
+
+  IndexToPointMatrix: 
+1 0 0
+0 -1 0
+0 0 1
+
+  PointToIndexMatrix: 
+1 0 0
+0 -1 0
+0 0 1
+
+  Inverse Direction: 
+1 0 0
+0 -1 0
+0 0 1
+
+  PixelContainer: 
+    ImportImageContainer (0x5555a9bdb2d0)
+      RTTI typeinfo:   itk::ImportImageContainer<unsigned long, double>
+      Reference Count: 1
+      Modified Time: 3157
+      Debug: Off
+      Object Name: 
+      Observers: 
+        none
+      Pointer: 0x153554c5b010
+      Container manages memory: true
+      Size: 11534336
+      Capacity: 11534336
+
+     Weighting = 0.5
+     Sampling strategy = none
+     Number of bins = 32
+     Radius = 4
+     Sampling percentage  = 1
+   Transform = SyN
+     Gradient step = 0.1
+     Update field sigma (voxel space) = 3
+     Total field sigma (voxel space) = 0
+     Update field time sigma = 0
+     Total field time sigma  = 0
+     Number of time indices = 0
+     Number of time point samples = 0
+Registration using 3 total stages.
+
+Stage 0
+  iterations = 1000x500x250x100
+  convergence threshold = 1e-08
+  convergence window size = 10
+  number of levels = 4
+  using the Mattes MI metric (number of bins = 32, weight = 1, use gradient filter = 0)
+  preprocessing:  winsorizing the image intensities
+  preprocessing:  histogram matching the images
+  Shrink factors (level 1 out of 4): [8, 8, 8]
+  Shrink factors (level 2 out of 4): [4, 4, 4]
+  Shrink factors (level 3 out of 4): [2, 2, 2]
+  Shrink factors (level 4 out of 4): [1, 1, 1]
+  smoothing sigmas per level: [4, 2, 1, 0]
+  regular sampling (percentage = 0.25)
+
+*** Running Euler3DTransform registration ***
+
+DIAGNOSTIC,Iteration,metricValue,convergenceValue,ITERATION_TIME_INDEX,SINCE_LAST
+ 2DIAGNOSTIC,     1, -6.613750448261e-01, 1.797693134862e+308, 4.4718e-01, 4.4718e-01, 
+ 2DIAGNOSTIC,     2, -6.619315581294e-01, 1.797693134862e+308, 4.5332e-01, 6.1328e-03, 
+ 2DIAGNOSTIC,     3, -6.627278369421e-01, 1.797693134862e+308, 4.5827e-01, 4.9570e-03, 
+ 2DIAGNOSTIC,     4, -6.637827751492e-01, 1.797693134862e+308, 4.6409e-01, 5.8150e-03, 
+ 2DIAGNOSTIC,     5, -6.643912483132e-01, 1.797693134862e+308, 4.6971e-01, 5.6171e-03, 
+ 2DIAGNOSTIC,     6, -6.646663946745e-01, 1.797693134862e+308, 4.7457e-01, 4.8659e-03, 
+ 2DIAGNOSTIC,     7, -6.653573729395e-01, 1.797693134862e+308, 4.8171e-01, 7.1371e-03, 
+ 2DIAGNOSTIC,     8, -6.655537140316e-01, 1.797693134862e+308, 4.8727e-01, 5.5621e-03, 
+ 2DIAGNOSTIC,     9, -6.655865691847e-01, 1.797693134862e+308, 4.9205e-01, 4.7820e-03, 
+ 2DIAGNOSTIC,    10, -6.658005412152e-01, 4.475324117750e-04, 4.9871e-01, 6.6619e-03, 
+ 2DIAGNOSTIC,    11, -6.660654378784e-01, 3.428886154244e-04, 5.0385e-01, 5.1322e-03, 
+ 2DIAGNOSTIC,    12, -6.665199853567e-01, 2.606294111263e-04, 5.0909e-01, 5.2409e-03, 
+ 2DIAGNOSTIC,    13, -6.678385182971e-01, 2.362876460612e-04, 5.1600e-01, 6.9151e-03, 
+ 2DIAGNOSTIC,    14, -6.684043244339e-01, 2.426677672323e-04, 5.2209e-01, 6.0890e-03, 
+ 2DIAGNOSTIC,    15, -6.685304515684e-01, 2.473462191981e-04, 5.2802e-01, 5.9290e-03, 
+ 2DIAGNOSTIC,    16, -6.686935517555e-01, 2.406732350637e-04, 5.3622e-01, 8.1949e-03, 
+ 2DIAGNOSTIC,    17, -6.689933289446e-01, 2.374659894201e-04, 5.4119e-01, 4.9751e-03, 
+ 2DIAGNOSTIC,    18, -6.698304176032e-01, 2.367628840588e-04, 5.4678e-01, 5.5940e-03, 
+ 2DIAGNOSTIC,    19, -6.706055717018e-01, 2.318631115579e-04, 5.5265e-01, 5.8620e-03, 
+ 2DIAGNOSTIC,    20, -6.707837818342e-01, 2.145908695191e-04, 5.5752e-01, 4.8761e-03, 
+ 2DIAGNOSTIC,    21, -6.710637072603e-01, 1.907163562842e-04, 5.6294e-01, 5.4178e-03, 
+ 2DIAGNOSTIC,    22, -6.715074741293e-01, 1.681651455248e-04, 5.6835e-01, 5.4100e-03, 
+ 2DIAGNOSTIC,    23, -6.720350238199e-01, 1.655102121714e-04, 5.7379e-01, 5.4350e-03, 
+ 2DIAGNOSTIC,    24, -6.741465054703e-01, 1.948523084132e-04, 5.7937e-01, 5.5840e-03, 
+ 2DIAGNOSTIC,    25, -6.768210207660e-01, 2.506070413808e-04, 5.8751e-01, 8.1441e-03, 
+ 2DIAGNOSTIC,    26, -6.773658795505e-01, 2.895750996232e-04, 5.9225e-01, 4.7338e-03, 
+ 2DIAGNOSTIC,    27, -6.776544384399e-01, 3.081856264329e-04, 5.9805e-01, 5.7988e-03, 
+ 2DIAGNOSTIC,    28, -6.796568984623e-01, 3.396864662528e-04, 6.0528e-01, 7.2329e-03, 
+ 2DIAGNOSTIC,    29, -6.802237048293e-01, 3.553932012133e-04, 6.1097e-01, 5.6880e-03, 
+ 2DIAGNOSTIC,    30, -6.811730533073e-01, 3.519741479672e-04, 6.1637e-01, 5.4002e-03, 
+ 2DIAGNOSTIC,    31, -6.812952490645e-01, 3.213568258259e-04, 6.2187e-01, 5.5020e-03, 
+ 2DIAGNOSTIC,    32, -6.813097645052e-01, 2.691701049687e-04, 6.2690e-01, 5.0280e-03, 
+ 2DIAGNOSTIC,    33, -6.814636665815e-01, 2.030104738608e-04, 6.3232e-01, 5.4221e-03, 
+ 2DIAGNOSTIC,    34, -6.815200825261e-01, 1.475372729937e-04, 6.3808e-01, 5.7619e-03, 
+ 2DIAGNOSTIC,    35, -6.814443836791e-01, 1.128242265345e-04, 6.4357e-01, 5.4910e-03, 
+ 2DIAGNOSTIC,    36, -6.814511251187e-01, 7.620620025634e-05, 6.4897e-01, 5.4011e-03, 
+ 2DIAGNOSTIC,    37, -6.815010123625e-01, 3.788235732517e-05, 6.5444e-01, 5.4660e-03, 
+ 2DIAGNOSTIC,    38, -6.814963252953e-01, 2.021908195811e-05, 6.5936e-01, 4.9212e-03, 
+ 2DIAGNOSTIC,    39, -6.814908902604e-01, 7.432025732976e-06, 6.6484e-01, 5.4810e-03, 
+ 2DIAGNOSTIC,    40, -6.814994656948e-01, 4.794560147625e-06, 6.7018e-01, 5.3430e-03, 
+ 2DIAGNOSTIC,    41, -6.815155485174e-01, 3.351721600386e-06, 6.7496e-01, 4.7791e-03, 
+ 2DIAGNOSTIC,    42, -6.816936250914e-01, 3.606906335499e-06, 6.8091e-01, 5.9440e-03, 
+ 2DIAGNOSTIC,    43, -6.817199511363e-01, 5.276905089172e-06, 6.8713e-01, 6.2201e-03, 
+ 2DIAGNOSTIC,    44, -6.815727186723e-01, 5.612349359200e-06, 6.9671e-01, 9.5830e-03, 
+ 2DIAGNOSTIC,    45, -6.815854957021e-01, 4.947109632177e-06, 7.0186e-01, 5.1460e-03, 
+ 2DIAGNOSTIC,    46, -6.817034784002e-01, 5.010898000528e-06, 7.0737e-01, 5.5130e-03, 
+ 2DIAGNOSTIC,    47, -6.816558374283e-01, 4.602558713141e-06, 7.1211e-01, 4.7390e-03, 
+ 2DIAGNOSTIC,    48, -6.818322632544e-01, 5.370609089044e-06, 7.1762e-01, 5.5161e-03, 
+ 2DIAGNOSTIC,    49, -6.818455175481e-01, 5.736770499195e-06, 7.2332e-01, 5.6939e-03, 
+ 2DIAGNOSTIC,    50, -6.817869831809e-01, 5.205295751497e-06, 7.2824e-01, 4.9260e-03, 
+ 2DIAGNOSTIC,    51, -6.817448518960e-01, 4.006449014889e-06, 7.3339e-01, 5.1479e-03, 
+ 2DIAGNOSTIC,    52, -6.817420730488e-01, 3.934964354746e-06, 7.3820e-01, 4.8032e-03, 
+ 2DIAGNOSTIC,    53, -6.818034624727e-01, 4.261427014502e-06, 7.4365e-01, 5.4550e-03, 
+ 2DIAGNOSTIC,    54, -6.818174881660e-01, 3.163793978720e-06, 7.4913e-01, 5.4770e-03, 
+ 2DIAGNOSTIC,    55, -6.817839399629e-01, 1.703202128663e-06, 7.5450e-01, 5.3711e-03, 
+ 2DIAGNOSTIC,    56, -6.817474518179e-01, 8.513273661200e-07, 7.5919e-01, 4.6921e-03, 
+DIAGNOSTIC,Iteration,metricValue,convergenceValue,ITERATION_TIME_INDEX,SINCE_LAST
+ 2DIAGNOSTIC,     1, -4.962384365404e-01, 1.797693134862e+308, 1.2507e+00, 4.9146e-01, 
+ 2DIAGNOSTIC,     2, -4.967833028286e-01, 1.797693134862e+308, 1.2940e+00, 4.3370e-02, 
+ 2DIAGNOSTIC,     3, -4.975066500897e-01, 1.797693134862e+308, 1.3376e+00, 4.3607e-02, 
+ 2DIAGNOSTIC,     4, -4.984244870477e-01, 1.797693134862e+308, 1.3787e+00, 4.1118e-02, 
+ 2DIAGNOSTIC,     5, -4.994528894821e-01, 1.797693134862e+308, 1.4200e+00, 4.1257e-02, 
+ 2DIAGNOSTIC,     6, -4.997767317311e-01, 1.797693134862e+308, 1.4683e+00, 4.8276e-02, 
+ 2DIAGNOSTIC,     7, -4.999852821976e-01, 1.797693134862e+308, 1.5342e+00, 6.5955e-02, 
+ 2DIAGNOSTIC,     8, -5.000285620487e-01, 1.797693134862e+308, 1.5831e+00, 4.8853e-02, 
+ 2DIAGNOSTIC,     9, -5.000725110825e-01, 1.797693134862e+308, 1.6309e+00, 4.7778e-02, 
+ 2DIAGNOSTIC,    10, -5.001410594080e-01, 5.346890732350e-04, 1.6843e+00, 5.3445e-02, 
+ 2DIAGNOSTIC,    11, -5.001492224553e-01, 3.719831153759e-04, 1.7289e+00, 4.4587e-02, 
+ 2DIAGNOSTIC,    12, -5.001535340667e-01, 2.295960017283e-04, 1.7834e+00, 5.4504e-02, 
+ 2DIAGNOSTIC,    13, -5.001484264482e-01, 1.197263773551e-04, 1.8288e+00, 4.5399e-02, 
+ 2DIAGNOSTIC,    14, -5.001528650923e-01, 5.149994740988e-05, 1.8693e+00, 4.0509e-02, 
+ 2DIAGNOSTIC,    15, -5.001571908458e-01, 2.679856204781e-05, 1.9234e+00, 5.4065e-02, 
+ 2DIAGNOSTIC,    16, -5.001570522235e-01, 1.425406890397e-05, 1.9687e+00, 4.5317e-02, 
+ 2DIAGNOSTIC,    17, -5.001581613270e-01, 9.092948412441e-06, 2.0106e+00, 4.1877e-02, 
+ 2DIAGNOSTIC,    18, -5.001675298315e-01, 5.497121420076e-06, 2.0510e+00, 4.0418e-02, 
+ 2DIAGNOSTIC,    19, -5.001813333968e-01, 3.600901957182e-06, 2.0966e+00, 4.5607e-02, 
+ 2DIAGNOSTIC,    20, -5.001822490794e-01, 3.674377123848e-06, 2.1505e+00, 5.3955e-02, 
+ 2DIAGNOSTIC,    21, -5.001769442539e-01, 3.628758693065e-06, 2.1984e+00, 4.7847e-02, 
+ 2DIAGNOSTIC,    22, -5.001779919583e-01, 3.544334211215e-06, 2.2453e+00, 4.6885e-02, 
+ 2DIAGNOSTIC,    23, -5.001807842669e-01, 3.204667551944e-06, 2.2927e+00, 4.7429e-02, 
+ 2DIAGNOSTIC,    24, -5.001725175961e-01, 2.619389189711e-06, 2.3337e+00, 4.0941e-02, 
+ 2DIAGNOSTIC,    25, -5.001734204188e-01, 2.087914791671e-06, 2.3799e+00, 4.6200e-02, 
+ 2DIAGNOSTIC,    26, -5.001742301261e-01, 1.542225715523e-06, 2.4307e+00, 5.0828e-02, 
+ 2DIAGNOSTIC,    27, -5.001722085192e-01, 9.827623823830e-07, 2.4685e+00, 3.7803e-02, 
+ 2DIAGNOSTIC,    28, -5.001661381661e-01, 5.405317703849e-07, 2.5123e+00, 4.3841e-02, 
+ 2DIAGNOSTIC,    29, -5.001690079362e-01, 5.163817407422e-07, 2.5505e+00, 3.8224e-02, 
+ 2DIAGNOSTIC,    30, -5.001638158710e-01, 4.684244914316e-07, 2.5881e+00, 3.7556e-02, 
+ 2DIAGNOSTIC,    31, -5.001726568678e-01, 5.435097838805e-07, 2.6395e+00, 5.1392e-02, 
+ 2DIAGNOSTIC,    32, -5.001758357949e-01, 7.280776562202e-07, 2.6841e+00, 4.4643e-02, 
+ 2DIAGNOSTIC,    33, -5.001740542612e-01, 9.491973852818e-07, 2.7299e+00, 4.5786e-02, 
+ 2DIAGNOSTIC,    34, -5.001722099644e-01, 9.926429787900e-07, 2.7751e+00, 4.5168e-02, 
+ 2DIAGNOSTIC,    35, -5.001702383536e-01, 1.010563291642e-06, 2.8210e+00, 4.5935e-02, 
+ 2DIAGNOSTIC,    36, -5.001683450324e-01, 9.991106067891e-07, 2.8599e+00, 3.8901e-02, 
+ 2DIAGNOSTIC,    37, -5.001664681572e-01, 9.181142317932e-07, 2.8984e+00, 3.8507e-02, 
+ 2DIAGNOSTIC,    38, -5.001669539802e-01, 7.526605199475e-07, 2.9452e+00, 4.6786e-02, 
+ 2DIAGNOSTIC,    39, -5.001697848141e-01, 6.910722696318e-07, 2.9995e+00, 5.4235e-02, 
+ 2DIAGNOSTIC,    40, -5.001697921541e-01, 5.664939822098e-07, 3.0461e+00, 4.6662e-02, 
+ 2DIAGNOSTIC,    41, -5.001677857521e-01, 5.639056522809e-07, 3.0881e+00, 4.1939e-02, 
+ 2DIAGNOSTIC,    42, -5.001613350446e-01, 5.392953849950e-07, 3.1288e+00, 4.0762e-02, 
+ 2DIAGNOSTIC,    43, -5.001663157968e-01, 5.809530250374e-07, 3.1719e+00, 4.3093e-02, 
+ 2DIAGNOSTIC,    44, -5.001671202652e-01, 6.186353955946e-07, 3.2177e+00, 4.5815e-02, 
+ 2DIAGNOSTIC,    45, -5.001725766627e-01, 7.082853865602e-07, 3.2643e+00, 4.6529e-02, 
+ 2DIAGNOSTIC,    46, -5.001686743607e-01, 7.235313615080e-07, 3.3118e+00, 4.7565e-02, 
+ 2DIAGNOSTIC,    47, -5.001647283074e-01, 6.683946052501e-07, 3.3597e+00, 4.7910e-02, 
+ 2DIAGNOSTIC,    48, -5.001604968915e-01, 5.717772453874e-07, 3.4020e+00, 4.2293e-02, 
+ 2DIAGNOSTIC,    49, -5.001609197600e-01, 5.236021485763e-07, 3.4508e+00, 4.8789e-02, 
+ 2DIAGNOSTIC,    50, -5.001637568081e-01, 5.200989761714e-07, 3.4969e+00, 4.6063e-02, 
+ 2DIAGNOSTIC,    51, -5.001619697196e-01, 4.875436048213e-07, 3.5445e+00, 4.7673e-02, 
+ 2DIAGNOSTIC,    52, -5.001619896282e-01, 4.006144377830e-07, 3.5865e+00, 4.1992e-02, 
+ 2DIAGNOSTIC,    53, -5.001590848588e-01, 3.604689346112e-07, 3.6272e+00, 4.0649e-02, 
+ 2DIAGNOSTIC,    54, -5.001597089941e-01, 3.576225589101e-07, 3.6687e+00, 4.1545e-02, 
+ 2DIAGNOSTIC,    55, -5.001702251928e-01, 5.411971562320e-07, 3.7089e+00, 4.0157e-02, 
+ 2DIAGNOSTIC,    56, -5.001959688934e-01, 9.409671107505e-07, 3.7549e+00, 4.6032e-02, 
+ 2DIAGNOSTIC,    57, -5.002401849914e-01, 1.688424741072e-06, 3.8019e+00, 4.6980e-02, 
+ 2DIAGNOSTIC,    58, -5.002377816427e-01, 2.229146000593e-06, 3.8735e+00, 7.1586e-02, 
+ 2DIAGNOSTIC,    59, -5.002991114591e-01, 3.193389054010e-06, 3.9178e+00, 4.4277e-02, 
+ 2DIAGNOSTIC,    60, -5.002984931451e-01, 3.878582170838e-06, 3.9719e+00, 5.4096e-02, 
+ 2DIAGNOSTIC,    61, -5.003015394767e-01, 4.231387097167e-06, 4.0188e+00, 4.6942e-02, 
+ 2DIAGNOSTIC,    62, -5.003065015062e-01, 4.264545625951e-06, 4.0661e+00, 4.7290e-02, 
+ 2DIAGNOSTIC,    63, -5.003047493636e-01, 3.894052738349e-06, 4.1069e+00, 4.0761e-02, 
+ 2DIAGNOSTIC,    64, -5.003014360547e-01, 3.183784189620e-06, 4.1531e+00, 4.6259e-02, 
+ 2DIAGNOSTIC,    65, -5.003064724360e-01, 2.369853229028e-06, 4.1946e+00, 4.1489e-02, 
+ 2DIAGNOSTIC,    66, -5.002995659078e-01, 1.556755623203e-06, 4.2450e+00, 5.0374e-02, 
+ 2DIAGNOSTIC,    67, -5.003030366178e-01, 1.076744987553e-06, 4.2997e+00, 5.4686e-02, 
+ 2DIAGNOSTIC,    68, -5.003015565677e-01, 5.054185683584e-07, 4.3449e+00, 4.5235e-02, 
+ 2DIAGNOSTIC,    69, -5.002971687458e-01, 4.173926293084e-07, 4.3850e+00, 4.0118e-02, 
+ 2DIAGNOSTIC,    70, -5.002993861718e-01, 3.496008324430e-07, 4.4315e+00, 4.6452e-02, 
+ 2DIAGNOSTIC,    71, -5.002972867167e-01, 2.992472832031e-07, 4.4731e+00, 4.1608e-02, 
+ 2DIAGNOSTIC,    72, -5.002997803079e-01, 3.241641525157e-07, 4.5197e+00, 4.6574e-02, 
+ 2DIAGNOSTIC,    73, -5.003021436426e-01, 3.646163321599e-07, 4.5576e+00, 3.7901e-02, 
+ 2DIAGNOSTIC,    74, -5.002980431080e-01, 3.525990916343e-07, 4.6025e+00, 4.4985e-02, 
+ 2DIAGNOSTIC,    75, -5.002959439694e-01, 3.735929189792e-07, 4.6421e+00, 3.9540e-02, 
+ 2DIAGNOSTIC,    76, -5.002938936891e-01, 3.310358170742e-07, 4.6829e+00, 4.0788e-02, 
+ 2DIAGNOSTIC,    77, -5.002943420262e-01, 3.266092699229e-07, 4.7216e+00, 3.8749e-02, 
+ 2DIAGNOSTIC,    78, -5.002994026856e-01, 3.568542364888e-07, 4.7621e+00, 4.0498e-02, 
+ 2DIAGNOSTIC,    79, -5.003135684987e-01, 4.605214664524e-07, 4.8008e+00, 3.8668e-02, 
+ 2DIAGNOSTIC,    80, -5.003334471390e-01, 7.119445793301e-07, 4.8476e+00, 4.6790e-02, 
+ 2DIAGNOSTIC,    81, -5.003396280560e-01, 9.527511301947e-07, 4.9941e+00, 1.4657e-01, 
+ 2DIAGNOSTIC,    82, -5.003396280549e-01, 1.151728250350e-06, 5.1174e+00, 1.2327e-01, 
+ 2DIAGNOSTIC,    83, -5.003396280549e-01, 1.290472023395e-06, 5.1659e+00, 4.8482e-02, 
+ 2DIAGNOSTIC,    84, -5.003396280549e-01, 1.309223089250e-06, 5.2207e+00, 5.4796e-02, 
+ 2DIAGNOSTIC,    85, -5.003396280549e-01, 1.221796469669e-06, 5.2684e+00, 4.7675e-02, 
+ 2DIAGNOSTIC,    86, -5.003396280549e-01, 1.041597220626e-06, 5.3273e+00, 5.8919e-02, 
+ 2DIAGNOSTIC,    87, -5.003396280549e-01, 8.056772907803e-07, 5.3890e+00, 6.1693e-02, 
+ 2DIAGNOSTIC,    88, -5.003396280549e-01, 5.648470406613e-07, 5.4366e+00, 4.7628e-02, 
+ 2DIAGNOSTIC,    89, -5.003396280549e-01, 3.970774498010e-07, 5.4869e+00, 5.0328e-02, 
+ 2DIAGNOSTIC,    90, -5.003396280549e-01, 3.536315217462e-07, 5.5357e+00, 4.8746e-02, 
+ 2DIAGNOSTIC,    91, -5.003396280549e-01, 3.497434240343e-07, 5.5836e+00, 4.7933e-02, 
+ 2DIAGNOSTIC,    92, -5.003396280549e-01, 3.459398876179e-07, 5.6343e+00, 5.0693e-02, 
+ 2DIAGNOSTIC,    93, -5.003396280549e-01, 3.422181897670e-07, 5.6847e+00, 5.0422e-02, 
+ 2DIAGNOSTIC,    94, -5.003396280549e-01, 3.385757172923e-07, 5.7368e+00, 5.2093e-02, 
+ 2DIAGNOSTIC,    95, -5.003396280549e-01, 3.350099670729e-07, 5.7837e+00, 4.6891e-02, 
+ 2DIAGNOSTIC,    96, -5.003396280549e-01, 3.315185403453e-07, 5.8315e+00, 4.7811e-02, 
+ 2DIAGNOSTIC,    97, -5.003396280549e-01, 3.280991373086e-07, 5.8806e+00, 4.9081e-02, 
+ 2DIAGNOSTIC,    98, -5.003396280549e-01, 3.247495520883e-07, 5.9300e+00, 4.9358e-02, 
+ 2DIAGNOSTIC,    99, -5.003396280549e-01, 3.214676679540e-07, 5.9819e+00, 5.1975e-02, 
+ 2DIAGNOSTIC,   100, -5.003396280549e-01, 3.182514529236e-07, 6.0341e+00, 5.2196e-02, 
+ 2DIAGNOSTIC,   101, -5.003396280549e-01, 3.150989554886e-07, 6.0830e+00, 4.8863e-02, 
+ 2DIAGNOSTIC,   102, -5.003396280549e-01, 3.120083007253e-07, 6.1351e+00, 5.2085e-02, 
+ 2DIAGNOSTIC,   103, -5.003396280549e-01, 3.089776865577e-07, 6.1855e+00, 5.0380e-02, 
+ 2DIAGNOSTIC,   104, -5.003396280549e-01, 3.060053802451e-07, 6.2333e+00, 4.7826e-02, 
+ 2DIAGNOSTIC,   105, -5.003396280549e-01, 3.030897151000e-07, 6.2964e+00, 6.3136e-02, 
+ 2DIAGNOSTIC,   106, -5.003396280549e-01, 3.002290873359e-07, 6.3470e+00, 5.0530e-02, 
+ 2DIAGNOSTIC,   107, -5.003396280549e-01, 2.974219531684e-07, 6.3972e+00, 5.0280e-02, 
+ 2DIAGNOSTIC,   108, -5.003396280549e-01, 2.946668259968e-07, 6.4471e+00, 4.9867e-02, 
+ 2DIAGNOSTIC,   109, -5.003396280549e-01, 2.919622738053e-07, 6.4903e+00, 4.3219e-02, 
+ 2DIAGNOSTIC,   110, -5.003396280549e-01, 2.893069166957e-07, 6.5315e+00, 4.1170e-02, 
+ 2DIAGNOSTIC,   111, -5.003396280549e-01, 2.866994244840e-07, 6.5787e+00, 4.7185e-02, 
+ 2DIAGNOSTIC,   112, -5.003396280549e-01, 2.841385145207e-07, 6.6295e+00, 5.0798e-02, 
+ 2DIAGNOSTIC,   113, -5.003396280549e-01, 2.816229495925e-07, 6.6786e+00, 4.9092e-02, 
+ 2DIAGNOSTIC,   114, -5.003396280549e-01, 2.791515359025e-07, 6.7279e+00, 4.9291e-02, 
+ 2DIAGNOSTIC,   115, -5.003396280549e-01, 2.767231212057e-07, 6.7776e+00, 4.9771e-02, 
+ 2DIAGNOSTIC,   116, -5.003396280549e-01, 2.743365929980e-07, 6.8193e+00, 4.1706e-02, 
+ 2DIAGNOSTIC,   117, -5.003396280549e-01, 2.719908768333e-07, 6.8739e+00, 5.4606e-02, 
+ 2DIAGNOSTIC,   118, -5.003396280549e-01, 2.696849346895e-07, 6.9368e+00, 6.2823e-02, 
+ 2DIAGNOSTIC,   119, -5.003396280549e-01, 2.674177634610e-07, 6.9881e+00, 5.1388e-02, 
+ 2DIAGNOSTIC,   120, -5.003396280549e-01, 2.651883934789e-07, 7.0417e+00, 5.3526e-02, 
+ 2DIAGNOSTIC,   121, -5.003396280549e-01, 2.629958871687e-07, 7.1009e+00, 5.9183e-02, 
+ 2DIAGNOSTIC,   122, -5.003396280549e-01, 2.608393376794e-07, 7.1538e+00, 5.2914e-02, 
+ 2DIAGNOSTIC,   123, -5.003396280549e-01, 2.587178676763e-07, 7.2049e+00, 5.1146e-02, 
+ 2DIAGNOSTIC,   124, -5.003396280549e-01, 2.566306281353e-07, 7.2550e+00, 5.0130e-02, 
+ 2DIAGNOSTIC,   125, -5.003396280549e-01, 2.545767972106e-07, 7.3054e+00, 5.0395e-02, 
+ 2DIAGNOSTIC,   126, -5.003396280549e-01, 2.525555791531e-07, 7.3538e+00, 4.8360e-02, 
+ 2DIAGNOSTIC,   127, -5.003396280549e-01, 2.505662033015e-07, 7.4028e+00, 4.9003e-02, 
+ 2DIAGNOSTIC,   128, -5.003396280549e-01, 2.486079230656e-07, 7.4530e+00, 5.0154e-02, 
+ 2DIAGNOSTIC,   129, -5.003396280549e-01, 2.466800150241e-07, 7.5016e+00, 4.8657e-02, 
+ 2DIAGNOSTIC,   130, -5.003396280549e-01, 2.447817780277e-07, 7.5507e+00, 4.9114e-02, 
+ 2DIAGNOSTIC,   131, -5.003396280549e-01, 2.429125323337e-07, 7.5990e+00, 4.8290e-02, 
+ 2DIAGNOSTIC,   132, -5.003396280549e-01, 2.410716188096e-07, 7.6485e+00, 4.9451e-02, 
+ 2DIAGNOSTIC,   133, -5.003396280549e-01, 2.392583981527e-07, 7.6959e+00, 4.7470e-02, 
+ 2DIAGNOSTIC,   134, -5.003396280549e-01, 2.374722501506e-07, 7.7428e+00, 4.6892e-02, 
+ 2DIAGNOSTIC,   135, -5.003396280549e-01, 2.357125729810e-07, 7.7917e+00, 4.8903e-02, 
+ 2DIAGNOSTIC,   136, -5.003396280549e-01, 2.339787825217e-07, 7.8410e+00, 4.9303e-02, 
+ 2DIAGNOSTIC,   137, -5.003396280549e-01, 2.322703117098e-07, 7.8902e+00, 4.9134e-02, 
+ 2DIAGNOSTIC,   138, -5.003396280549e-01, 2.305866099337e-07, 7.9386e+00, 4.8397e-02, 
+ 2DIAGNOSTIC,   139, -5.003396280549e-01, 2.289271424189e-07, 7.9864e+00, 4.7871e-02, 
+ 2DIAGNOSTIC,   140, -5.003396280549e-01, 2.272913896869e-07, 8.0333e+00, 4.6903e-02, 
+ 2DIAGNOSTIC,   141, -5.003396280549e-01, 2.256788469964e-07, 8.0739e+00, 4.0606e-02, 
+ 2DIAGNOSTIC,   142, -5.003396280549e-01, 2.240890238240e-07, 8.1247e+00, 5.0725e-02, 
+ 2DIAGNOSTIC,   143, -5.003396280549e-01, 2.225214433818e-07, 8.1733e+00, 4.8598e-02, 
+ 2DIAGNOSTIC,   144, -5.003396280549e-01, 2.209756421274e-07, 8.2201e+00, 4.6835e-02, 
+ 2DIAGNOSTIC,   145, -5.003396280549e-01, 2.194511693017e-07, 8.2683e+00, 4.8170e-02, 
+ 2DIAGNOSTIC,   146, -5.003396280549e-01, 2.179475865104e-07, 8.3161e+00, 4.7804e-02, 
+ 2DIAGNOSTIC,   147, -5.003396280549e-01, 2.164644672866e-07, 8.3693e+00, 5.3227e-02, 
+ 2DIAGNOSTIC,   148, -5.003396280549e-01, 2.150013966948e-07, 8.4164e+00, 4.7045e-02, 
+ 2DIAGNOSTIC,   149, -5.003396280549e-01, 2.135579709383e-07, 8.4636e+00, 4.7283e-02, 
+ 2DIAGNOSTIC,   150, -5.003396280549e-01, 2.121337970007e-07, 8.5119e+00, 4.8302e-02, 
+ 2DIAGNOSTIC,   151, -5.003396280549e-01, 2.107284922687e-07, 8.5600e+00, 4.8059e-02, 
+ 2DIAGNOSTIC,   152, -5.003396280549e-01, 2.093416842062e-07, 8.6071e+00, 4.7066e-02, 
+ 2DIAGNOSTIC,   153, -5.003396280549e-01, 2.079730100244e-07, 8.6545e+00, 4.7472e-02, 
+ 2DIAGNOSTIC,   154, -5.003396280549e-01, 2.066221163576e-07, 8.7032e+00, 4.8695e-02, 
+ 2DIAGNOSTIC,   155, -5.003396280549e-01, 2.052886589532e-07, 8.7548e+00, 5.1556e-02, 
+ 2DIAGNOSTIC,   156, -5.003396280549e-01, 2.039723024016e-07, 8.8023e+00, 4.7483e-02, 
+ 2DIAGNOSTIC,   157, -5.003396280549e-01, 2.026727198351e-07, 8.8549e+00, 5.2594e-02, 
+ 2DIAGNOSTIC,   158, -5.003396280549e-01, 2.013895926637e-07, 8.9053e+00, 5.0430e-02, 
+ 2DIAGNOSTIC,   159, -5.003396280549e-01, 2.001226103122e-07, 8.9528e+00, 4.7529e-02, 
+ 2DIAGNOSTIC,   160, -5.003396280549e-01, 1.988714699768e-07, 9.0003e+00, 4.7490e-02, 
+ 2DIAGNOSTIC,   161, -5.003396280549e-01, 1.976358763736e-07, 9.0479e+00, 4.7596e-02, 
+ 2DIAGNOSTIC,   162, -5.003396280549e-01, 1.964155415144e-07, 9.0946e+00, 4.6690e-02, 
+ 2DIAGNOSTIC,   163, -5.003396280549e-01, 1.952101844893e-07, 9.1416e+00, 4.6993e-02, 
+ 2DIAGNOSTIC,   164, -5.003396280549e-01, 1.940195312250e-07, 9.1904e+00, 4.8839e-02, 
+ 2DIAGNOSTIC,   165, -5.003396280549e-01, 1.928433143060e-07, 9.2414e+00, 5.0999e-02, 
+ 2DIAGNOSTIC,   166, -5.003396280549e-01, 1.916812727631e-07, 9.2886e+00, 4.7183e-02, 
+ 2DIAGNOSTIC,   167, -5.003396280549e-01, 1.905331518713e-07, 9.3434e+00, 5.4807e-02, 
+ 2DIAGNOSTIC,   168, -5.003396280549e-01, 1.893987029815e-07, 9.3939e+00, 5.0477e-02, 
+ 2DIAGNOSTIC,   169, -5.003396280549e-01, 1.882776833207e-07, 9.4422e+00, 4.8312e-02, 
+ 2DIAGNOSTIC,   170, -5.003396280549e-01, 1.871698558399e-07, 9.4924e+00, 5.0194e-02, 
+ 2DIAGNOSTIC,   171, -5.003396280549e-01, 1.860749890290e-07, 9.5399e+00, 4.7518e-02, 
+ 2DIAGNOSTIC,   172, -5.003396280549e-01, 1.849928567702e-07, 9.5910e+00, 5.1110e-02, 
+ 2DIAGNOSTIC,   173, -5.003396280549e-01, 1.839232381682e-07, 9.6388e+00, 4.7758e-02, 
+ 2DIAGNOSTIC,   174, -5.003396280549e-01, 1.828659174129e-07, 9.6868e+00, 4.7991e-02, 
+ 2DIAGNOSTIC,   175, -5.003396280549e-01, 1.818206836280e-07, 9.7314e+00, 4.4633e-02, 
+ 2DIAGNOSTIC,   176, -5.003396280549e-01, 1.807873307308e-07, 9.7768e+00, 4.5359e-02, 
+ 2DIAGNOSTIC,   177, -5.003396280549e-01, 1.797656572914e-07, 9.8236e+00, 4.6833e-02, 
+ 2DIAGNOSTIC,   178, -5.003396280549e-01, 1.787554664168e-07, 9.8694e+00, 4.5823e-02, 
+ 2DIAGNOSTIC,   179, -5.003396280549e-01, 1.777565656058e-07, 9.9159e+00, 4.6468e-02, 
+ 2DIAGNOSTIC,   180, -5.003396280549e-01, 1.767687666417e-07, 9.9627e+00, 4.6854e-02, 
+ 2DIAGNOSTIC,   181, -5.003396280549e-01, 1.757918854711e-07, 1.0008e+01, 4.5719e-02, 
+ 2DIAGNOSTIC,   182, -5.003396280549e-01, 1.748257420784e-07, 1.0054e+01, 4.5432e-02, 
+ 2DIAGNOSTIC,   183, -5.003396280549e-01, 1.738701603925e-07, 1.0101e+01, 4.7005e-02, 
+ 2DIAGNOSTIC,   184, -5.003396280549e-01, 1.729249681634e-07, 1.0145e+01, 4.4276e-02, 
+ 2DIAGNOSTIC,   185, -5.003396280549e-01, 1.719899968711e-07, 1.0191e+01, 4.5527e-02, 
+ 2DIAGNOSTIC,   186, -5.003396280549e-01, 1.710650816182e-07, 1.0237e+01, 4.6680e-02, 
+ 2DIAGNOSTIC,   187, -5.003396280549e-01, 1.701500610390e-07, 1.0283e+01, 4.5566e-02, 
+ 2DIAGNOSTIC,   188, -5.003396280549e-01, 1.692447771998e-07, 1.0327e+01, 4.4443e-02, 
+ 2DIAGNOSTIC,   189, -5.003396280549e-01, 1.683490755090e-07, 1.0372e+01, 4.4791e-02, 
+ 2DIAGNOSTIC,   190, -5.003396280549e-01, 1.674628046303e-07, 1.0416e+01, 4.4012e-02, 
+ 2DIAGNOSTIC,   191, -5.003396280549e-01, 1.665858163982e-07, 1.0461e+01, 4.4739e-02, 
+ 2DIAGNOSTIC,   192, -5.003396280549e-01, 1.657179657371e-07, 1.0505e+01, 4.4192e-02, 
+ 2DIAGNOSTIC,   193, -5.003396280549e-01, 1.648591105765e-07, 1.0549e+01, 4.4057e-02, 
+ 2DIAGNOSTIC,   194, -5.003396280549e-01, 1.640091117777e-07, 1.0594e+01, 4.4327e-02, 
+ 2DIAGNOSTIC,   195, -5.003396280549e-01, 1.631678330540e-07, 1.0639e+01, 4.5646e-02, 
+ 2DIAGNOSTIC,   196, -5.003396280549e-01, 1.623351409035e-07, 1.0684e+01, 4.4623e-02, 
+ 2DIAGNOSTIC,   197, -5.003396280549e-01, 1.615109045325e-07, 1.0729e+01, 4.4856e-02, 
+ 2DIAGNOSTIC,   198, -5.003396280549e-01, 1.606949957935e-07, 1.0775e+01, 4.6611e-02, 
+ 2DIAGNOSTIC,   199, -5.003396280549e-01, 1.598872891150e-07, 1.0821e+01, 4.5430e-02, 
+ 2DIAGNOSTIC,   200, -5.003396280549e-01, 1.590876614324e-07, 1.0865e+01, 4.4625e-02, 
+ 2DIAGNOSTIC,   201, -5.003396280549e-01, 1.582959921398e-07, 1.0913e+01, 4.7902e-02, 
+ 2DIAGNOSTIC,   202, -5.003396280549e-01, 1.575121630132e-07, 1.0956e+01, 4.3285e-02, 
+ 2DIAGNOSTIC,   203, -5.003396280549e-01, 1.567360581592e-07, 1.1001e+01, 4.4917e-02, 
+ 2DIAGNOSTIC,   204, -5.003396280549e-01, 1.559675639621e-07, 1.1052e+01, 5.0532e-02, 
+ 2DIAGNOSTIC,   205, -5.003396280549e-01, 1.552065690188e-07, 1.1104e+01, 5.1684e-02, 
+ 2DIAGNOSTIC,   206, -5.003396280549e-01, 1.544529640886e-07, 1.1155e+01, 5.1691e-02, 
+ 2DIAGNOSTIC,   207, -5.003396280549e-01, 1.537066420514e-07, 1.1208e+01, 5.2185e-02, 
+ 2DIAGNOSTIC,   208, -5.003396280549e-01, 1.529674978394e-07, 1.1256e+01, 4.8233e-02, 
+ 2DIAGNOSTIC,   209, -5.003396280549e-01, 1.522354283979e-07, 1.1310e+01, 5.4147e-02, 
+ 2DIAGNOSTIC,   210, -5.003396280549e-01, 1.515103326324e-07, 1.1365e+01, 5.4974e-02, 
+ 2DIAGNOSTIC,   211, -5.003396280549e-01, 1.507921113713e-07, 1.1412e+01, 4.6870e-02, 
+ 2DIAGNOSTIC,   212, -5.003396280549e-01, 1.500806673113e-07, 1.1460e+01, 4.8626e-02, 
+ 2DIAGNOSTIC,   213, -5.003396280549e-01, 1.493759049804e-07, 1.1510e+01, 4.9296e-02, 
+ 2DIAGNOSTIC,   214, -5.003396280549e-01, 1.486777306825e-07, 1.1554e+01, 4.4618e-02, 
+ 2DIAGNOSTIC,   215, -5.003396280549e-01, 1.479860524756e-07, 1.1598e+01, 4.4205e-02, 
+ 2DIAGNOSTIC,   216, -5.003396280549e-01, 1.473007801116e-07, 1.1651e+01, 5.2346e-02, 
+ 2DIAGNOSTIC,   217, -5.003396280549e-01, 1.466218250206e-07, 1.1700e+01, 4.9218e-02, 
+ 2DIAGNOSTIC,   218, -5.003396280549e-01, 1.459491002385e-07, 1.1749e+01, 4.9024e-02, 
+ 2DIAGNOSTIC,   219, -5.003396280549e-01, 1.452825204055e-07, 1.1797e+01, 4.8073e-02, 
+ 2DIAGNOSTIC,   220, -5.003396280549e-01, 1.446220017067e-07, 1.1851e+01, 5.3883e-02, 
+ 2DIAGNOSTIC,   221, -5.003396280549e-01, 1.439674618452e-07, 1.1902e+01, 5.0802e-02, 
+ 2DIAGNOSTIC,   222, -5.003396280549e-01, 1.433188200096e-07, 1.1948e+01, 4.5972e-02, 
+ 2DIAGNOSTIC,   223, -5.003396280549e-01, 1.426759968400e-07, 1.1994e+01, 4.5773e-02, 
+ 2DIAGNOSTIC,   224, -5.003396280549e-01, 1.420389143872e-07, 1.2038e+01, 4.4904e-02, 
+ 2DIAGNOSTIC,   225, -5.003396280549e-01, 1.414074960954e-07, 1.2097e+01, 5.8396e-02, 
+ 2DIAGNOSTIC,   226, -5.003396280549e-01, 1.407816667557e-07, 1.2150e+01, 5.3505e-02, 
+ 2DIAGNOSTIC,   227, -5.003396280549e-01, 1.401613524974e-07, 1.2200e+01, 4.9568e-02, 
+ 2DIAGNOSTIC,   228, -5.003396280549e-01, 1.395464807319e-07, 1.2246e+01, 4.5892e-02, 
+ 2DIAGNOSTIC,   229, -5.003396280549e-01, 1.389369801456e-07, 1.2299e+01, 5.3055e-02, 
+ 2DIAGNOSTIC,   230, -5.003396280549e-01, 1.383327806678e-07, 1.2347e+01, 4.8157e-02, 
+ 2DIAGNOSTIC,   231, -5.003396280549e-01, 1.377338134396e-07, 1.2398e+01, 5.0730e-02, 
+ 2DIAGNOSTIC,   232, -5.003396280549e-01, 1.371400107850e-07, 1.2446e+01, 4.8543e-02, 
+ 2DIAGNOSTIC,   233, -5.003396280549e-01, 1.365513061964e-07, 1.2494e+01, 4.7968e-02, 
+ 2DIAGNOSTIC,   234, -5.003396280549e-01, 1.359676342991e-07, 1.2543e+01, 4.8665e-02, 
+ 2DIAGNOSTIC,   235, -5.003396280549e-01, 1.353889308338e-07, 1.2591e+01, 4.7651e-02, 
+ 2DIAGNOSTIC,   236, -5.003396280549e-01, 1.348151326295e-07, 1.2639e+01, 4.8877e-02, 
+ 2DIAGNOSTIC,   237, -5.003396280549e-01, 1.342461775798e-07, 1.2688e+01, 4.8654e-02, 
+ 2DIAGNOSTIC,   238, -5.003396280549e-01, 1.336820046284e-07, 1.2739e+01, 5.1327e-02, 
+ 2DIAGNOSTIC,   239, -5.003396280549e-01, 1.331225537330e-07, 1.2789e+01, 4.9122e-02, 
+ 2DIAGNOSTIC,   240, -5.003396280549e-01, 1.325677658577e-07, 1.2838e+01, 4.9620e-02, 
+ 2DIAGNOSTIC,   241, -5.003396280549e-01, 1.320175829463e-07, 1.2888e+01, 4.9317e-02, 
+ 2DIAGNOSTIC,   242, -5.003396280549e-01, 1.314719478979e-07, 1.2935e+01, 4.7973e-02, 
+ 2DIAGNOSTIC,   243, -5.003396280549e-01, 1.309308045594e-07, 1.2983e+01, 4.7107e-02, 
+ 2DIAGNOSTIC,   244, -5.003396280549e-01, 1.303940976895e-07, 1.3028e+01, 4.5693e-02, 
+ 2DIAGNOSTIC,   245, -5.003396280549e-01, 1.298617729583e-07, 1.3080e+01, 5.1747e-02, 
+ 2DIAGNOSTIC,   246, -5.003396280549e-01, 1.293337769112e-07, 1.3133e+01, 5.2943e-02, 
+ 2DIAGNOSTIC,   247, -5.003396280549e-01, 1.288100569628e-07, 1.3183e+01, 4.9764e-02, 
+ 2DIAGNOSTIC,   248, -5.003396280549e-01, 1.282905613782e-07, 1.3231e+01, 4.8482e-02, 
+ 2DIAGNOSTIC,   249, -5.003396280549e-01, 1.277752392503e-07, 1.3291e+01, 5.9357e-02, 
+ 2DIAGNOSTIC,   250, -5.003396280549e-01, 1.272640404882e-07, 1.3344e+01, 5.2941e-02, 
+ 2DIAGNOSTIC,   251, -5.003396280549e-01, 1.267569157996e-07, 1.3394e+01, 5.0402e-02, 
+ 2DIAGNOSTIC,   252, -5.003396280549e-01, 1.262538166739e-07, 1.3451e+01, 5.6740e-02, 
+ 2DIAGNOSTIC,   253, -5.003396280549e-01, 1.257546953688e-07, 1.3504e+01, 5.2910e-02, 
+ 2DIAGNOSTIC,   254, -5.003396280549e-01, 1.252595048917e-07, 1.3558e+01, 5.4178e-02, 
+ 2DIAGNOSTIC,   255, -5.003396280549e-01, 1.247681989903e-07, 1.3611e+01, 5.2824e-02, 
+ 2DIAGNOSTIC,   256, -5.003396280549e-01, 1.242807321344e-07, 1.3665e+01, 5.4665e-02, 
+ 2DIAGNOSTIC,   257, -5.003396280549e-01, 1.237970595012e-07, 1.3721e+01, 5.5475e-02, 
+ 2DIAGNOSTIC,   258, -5.003396280549e-01, 1.233171369646e-07, 1.3774e+01, 5.2800e-02, 
+ 2DIAGNOSTIC,   259, -5.003396280549e-01, 1.228409210749e-07, 1.3831e+01, 5.7040e-02, 
+ 2DIAGNOSTIC,   260, -5.003396280549e-01, 1.223683690618e-07, 1.3881e+01, 5.0909e-02, 
+ 2DIAGNOSTIC,   261, -5.003396280549e-01, 1.218994387991e-07, 1.3932e+01, 5.0811e-02, 
+ 2DIAGNOSTIC,   262, -5.003396280549e-01, 1.214340888105e-07, 1.3985e+01, 5.2502e-02, 
+ 2DIAGNOSTIC,   263, -5.003396280549e-01, 1.209722782485e-07, 1.4036e+01, 5.0771e-02, 
+ 2DIAGNOSTIC,   264, -5.003396280549e-01, 1.205139668857e-07, 1.4089e+01, 5.3085e-02, 
+ 2DIAGNOSTIC,   265, -5.003396280549e-01, 1.200591151010e-07, 1.4141e+01, 5.2565e-02, 
+ 2DIAGNOSTIC,   266, -5.003396280549e-01, 1.196076838683e-07, 1.4193e+01, 5.2029e-02, 
+ 2DIAGNOSTIC,   267, -5.003396280549e-01, 1.191596347497e-07, 1.4245e+01, 5.1755e-02, 
+ 2DIAGNOSTIC,   268, -5.003396280549e-01, 1.187149298787e-07, 1.4301e+01, 5.6062e-02, 
+ 2DIAGNOSTIC,   269, -5.003396280549e-01, 1.182735319509e-07, 1.4352e+01, 5.1131e-02, 
+ 2DIAGNOSTIC,   270, -5.003396280549e-01, 1.178354042172e-07, 1.4405e+01, 5.2421e-02, 
+ 2DIAGNOSTIC,   271, -5.003396280549e-01, 1.174005104677e-07, 1.4458e+01, 5.3003e-02, 
+ 2DIAGNOSTIC,   272, -5.003396280549e-01, 1.169688150318e-07, 1.4513e+01, 5.5442e-02, 
+ 2DIAGNOSTIC,   273, -5.003396280549e-01, 1.165402827522e-07, 1.4565e+01, 5.2198e-02, 
+ 2DIAGNOSTIC,   274, -5.003396280549e-01, 1.161148789901e-07, 1.4623e+01, 5.7626e-02, 
+ 2DIAGNOSTIC,   275, -5.003396280549e-01, 1.156925696143e-07, 1.4677e+01, 5.3894e-02, 
+ 2DIAGNOSTIC,   276, -5.003396280549e-01, 1.152733209815e-07, 1.4727e+01, 5.0373e-02, 
+ 2DIAGNOSTIC,   277, -5.003396280549e-01, 1.148570999364e-07, 1.4778e+01, 5.0464e-02, 
+ 2DIAGNOSTIC,   278, -5.003396280549e-01, 1.144438738039e-07, 1.4832e+01, 5.4819e-02, 
+ 2DIAGNOSTIC,   279, -5.003396280549e-01, 1.140336103721e-07, 1.4888e+01, 5.5420e-02, 
+ 2DIAGNOSTIC,   280, -5.003396280549e-01, 1.136262778949e-07, 1.4941e+01, 5.3007e-02, 
+ 2DIAGNOSTIC,   281, -5.003396280549e-01, 1.132218450757e-07, 1.4993e+01, 5.2098e-02, 
+ 2DIAGNOSTIC,   282, -5.003396280549e-01, 1.128202810593e-07, 1.5042e+01, 4.9150e-02, 
+ 2DIAGNOSTIC,   283, -5.003396280549e-01, 1.124215554325e-07, 1.5094e+01, 5.2245e-02, 
+ 2DIAGNOSTIC,   284, -5.003396280549e-01, 1.120256382047e-07, 1.5149e+01, 5.4358e-02, 
+ 2DIAGNOSTIC,   285, -5.003396280549e-01, 1.116324998109e-07, 1.5198e+01, 4.9706e-02, 
+ 2DIAGNOSTIC,   286, -5.003396280549e-01, 1.112421110943e-07, 1.5248e+01, 4.9571e-02, 
+ 2DIAGNOSTIC,   287, -5.003396280549e-01, 1.108544433132e-07, 1.5299e+01, 5.1328e-02, 
+ 2DIAGNOSTIC,   288, -5.003396280549e-01, 1.104694681135e-07, 1.5349e+01, 4.9230e-02, 
+ 2DIAGNOSTIC,   289, -5.003396280549e-01, 1.100871575435e-07, 1.5397e+01, 4.8607e-02, 
+ 2DIAGNOSTIC,   290, -5.003396280549e-01, 1.097074840335e-07, 1.5443e+01, 4.6250e-02, 
+ 2DIAGNOSTIC,   291, -5.003396280549e-01, 1.093304203932e-07, 1.5492e+01, 4.8565e-02, 
+ 2DIAGNOSTIC,   292, -5.003396280549e-01, 1.089559398038e-07, 1.5543e+01, 5.1045e-02, 
+ 2DIAGNOSTIC,   293, -5.003396280549e-01, 1.085840158127e-07, 1.5597e+01, 5.3747e-02, 
+ 2DIAGNOSTIC,   294, -5.003396280549e-01, 1.082146223290e-07, 1.5654e+01, 5.7294e-02, 
+ 2DIAGNOSTIC,   295, -5.003396280549e-01, 1.078477336134e-07, 1.5709e+01, 5.4870e-02, 
+ 2DIAGNOSTIC,   296, -5.003396280549e-01, 1.074833242752e-07, 1.5765e+01, 5.6561e-02, 
+ 2DIAGNOSTIC,   297, -5.003396280549e-01, 1.071213692689e-07, 1.5821e+01, 5.5340e-02, 
+ 2DIAGNOSTIC,   298, -5.003396280549e-01, 1.067618438798e-07, 1.5875e+01, 5.4227e-02, 
+ 2DIAGNOSTIC,   299, -5.003396280549e-01, 1.064047237282e-07, 1.5931e+01, 5.5677e-02, 
+ 2DIAGNOSTIC,   300, -5.003396280549e-01, 1.060499847574e-07, 1.5983e+01, 5.2063e-02, 
+ 2DIAGNOSTIC,   301, -5.003396280549e-01, 1.056976032293e-07, 1.6032e+01, 4.9655e-02, 
+ 2DIAGNOSTIC,   302, -5.003396280549e-01, 1.053475557249e-07, 1.6082e+01, 4.9425e-02, 
+ 2DIAGNOSTIC,   303, -5.003396280549e-01, 1.049998191276e-07, 1.6137e+01, 5.5265e-02, 
+ 2DIAGNOSTIC,   304, -5.003396280549e-01, 1.046543706335e-07, 1.6194e+01, 5.6421e-02, 
+ 2DIAGNOSTIC,   305, -5.003396280549e-01, 1.043111877309e-07, 1.6245e+01, 5.1167e-02, 
+ 2DIAGNOSTIC,   306, -5.003396280549e-01, 1.039702482051e-07, 1.6294e+01, 4.9192e-02, 
+ 2DIAGNOSTIC,   307, -5.003396280549e-01, 1.036315301272e-07, 1.6343e+01, 4.8865e-02, 
+ 2DIAGNOSTIC,   308, -5.003396280549e-01, 1.032950118617e-07, 1.6392e+01, 4.8952e-02, 
+ 2DIAGNOSTIC,   309, -5.003396280549e-01, 1.029606720437e-07, 1.6444e+01, 5.2571e-02, 
+ 2DIAGNOSTIC,   310, -5.003396280549e-01, 1.026284895890e-07, 1.6492e+01, 4.7380e-02, 
+ 2DIAGNOSTIC,   311, -5.003396280549e-01, 1.022984436857e-07, 1.6537e+01, 4.5822e-02, 
+ 2DIAGNOSTIC,   312, -5.003396280549e-01, 1.019705137845e-07, 1.6583e+01, 4.5657e-02, 
+ 2DIAGNOSTIC,   313, -5.003396280549e-01, 1.016446796024e-07, 1.6631e+01, 4.7803e-02, 
+ 2DIAGNOSTIC,   314, -5.003396280549e-01, 1.013209211150e-07, 1.6681e+01, 5.0387e-02, 
+ 2DIAGNOSTIC,   315, -5.003396280549e-01, 1.009992185472e-07, 1.6730e+01, 4.8749e-02, 
+ 2DIAGNOSTIC,   316, -5.003396280549e-01, 1.006795523795e-07, 1.6779e+01, 4.9048e-02, 
+ 2DIAGNOSTIC,   317, -5.003396280549e-01, 1.003619033405e-07, 1.6826e+01, 4.7186e-02, 
+ 2DIAGNOSTIC,   318, -5.003396280549e-01, 1.000462523919e-07, 1.6872e+01, 4.6057e-02, 
+ 2DIAGNOSTIC,   319, -5.003396280549e-01, 9.973258074426e-08, 1.6921e+01, 4.8379e-02, 
+ 2DIAGNOSTIC,   320, -5.003396280549e-01, 9.942086983804e-08, 1.6969e+01, 4.8470e-02, 
+ 2DIAGNOSTIC,   321, -5.003396280549e-01, 9.911110134377e-08, 1.7016e+01, 4.7081e-02, 
+ 2DIAGNOSTIC,   322, -5.003396280549e-01, 9.880325716437e-08, 1.7060e+01, 4.4185e-02, 
+ 2DIAGNOSTIC,   323, -5.003396280549e-01, 9.849731942221e-08, 1.7108e+01, 4.7785e-02, 
+ 2DIAGNOSTIC,   324, -5.003396280549e-01, 9.819327046346e-08, 1.7157e+01, 4.8818e-02, 
+ 2DIAGNOSTIC,   325, -5.003396280549e-01, 9.789109285197e-08, 1.7212e+01, 5.4667e-02, 
+ 2DIAGNOSTIC,   326, -5.003396280549e-01, 9.759076936107e-08, 1.7270e+01, 5.8659e-02, 
+ 2DIAGNOSTIC,   327, -5.003396280549e-01, 9.729228298222e-08, 1.7328e+01, 5.7651e-02, 
+ 2DIAGNOSTIC,   328, -5.003396280549e-01, 9.699561690597e-08, 1.7380e+01, 5.2424e-02, 
+ 2DIAGNOSTIC,   329, -5.003396280549e-01, 9.670075453274e-08, 1.7433e+01, 5.2978e-02, 
+ 2DIAGNOSTIC,   330, -5.003396280549e-01, 9.640767946505e-08, 1.7489e+01, 5.5283e-02, 
+ 2DIAGNOSTIC,   331, -5.003396280549e-01, 9.611637549799e-08, 1.7547e+01, 5.8196e-02, 
+ 2DIAGNOSTIC,   332, -5.003396280549e-01, 9.582682662787e-08, 1.7599e+01, 5.2077e-02, 
+ 2DIAGNOSTIC,   333, -5.003396280549e-01, 9.553901703921e-08, 1.7651e+01, 5.2036e-02, 
+ 2DIAGNOSTIC,   334, -5.003396280549e-01, 9.525293110865e-08, 1.7700e+01, 4.8558e-02, 
+ 2DIAGNOSTIC,   335, -5.003396280549e-01, 9.496855339804e-08, 1.7747e+01, 4.7166e-02, 
+ 2DIAGNOSTIC,   336, -5.003396280549e-01, 9.468586865263e-08, 1.7797e+01, 5.0043e-02, 
+ 2DIAGNOSTIC,   337, -5.003396280549e-01, 9.440486179856e-08, 1.7843e+01, 4.5906e-02, 
+ 2DIAGNOSTIC,   338, -5.003396280549e-01, 9.412551794366e-08, 1.7886e+01, 4.3583e-02, 
+ 2DIAGNOSTIC,   339, -5.003396280549e-01, 9.384782236662e-08, 1.7932e+01, 4.5957e-02, 
+ 2DIAGNOSTIC,   340, -5.003396280549e-01, 9.357176052223e-08, 1.7979e+01, 4.6731e-02, 
+ 2DIAGNOSTIC,   341, -5.003396280549e-01, 9.329731803787e-08, 1.8025e+01, 4.6384e-02, 
+ 2DIAGNOSTIC,   342, -5.003396280549e-01, 9.302448070354e-08, 1.8071e+01, 4.5148e-02, 
+ 2DIAGNOSTIC,   343, -5.003396280549e-01, 9.275323448058e-08, 1.8121e+01, 5.0115e-02, 
+ 2DIAGNOSTIC,   344, -5.003396280549e-01, 9.248356548945e-08, 1.8170e+01, 4.9427e-02, 
+ 2DIAGNOSTIC,   345, -5.003396280549e-01, 9.221546001326e-08, 1.8217e+01, 4.6452e-02, 
+ 2DIAGNOSTIC,   346, -5.003396280549e-01, 9.194890449472e-08, 1.8262e+01, 4.4984e-02, 
+ 2DIAGNOSTIC,   347, -5.003396280549e-01, 9.168388552961e-08, 1.8312e+01, 5.0286e-02, 
+ 2DIAGNOSTIC,   348, -5.003396280549e-01, 9.142038987116e-08, 1.8369e+01, 5.7607e-02, 
+ 2DIAGNOSTIC,   349, -5.003396280549e-01, 9.115840442393e-08, 1.8424e+01, 5.4106e-02, 
+ 2DIAGNOSTIC,   350, -5.003396280549e-01, 9.089791624126e-08, 1.8474e+01, 5.0475e-02, 
+ 2DIAGNOSTIC,   351, -5.003396280549e-01, 9.063891252348e-08, 1.8525e+01, 5.1474e-02, 
+ 2DIAGNOSTIC,   352, -5.003396280549e-01, 9.038138061926e-08, 1.8571e+01, 4.5765e-02, 
+ 2DIAGNOSTIC,   353, -5.003396280549e-01, 9.012530801647e-08, 1.8619e+01, 4.7822e-02, 
+ 2DIAGNOSTIC,   354, -5.003396280549e-01, 8.987068234609e-08, 1.8666e+01, 4.6977e-02, 
+ 2DIAGNOSTIC,   355, -5.003396280549e-01, 8.961749138094e-08, 1.8713e+01, 4.6808e-02, 
+ 2DIAGNOSTIC,   356, -5.003396280549e-01, 8.936572302781e-08, 1.8762e+01, 4.9480e-02, 
+ 2DIAGNOSTIC,   357, -5.003396280549e-01, 8.911536533013e-08, 1.8812e+01, 5.0047e-02, 
+ 2DIAGNOSTIC,   358, -5.003396280549e-01, 8.886640646489e-08, 1.8863e+01, 5.0199e-02, 
+ 2DIAGNOSTIC,   359, -5.003396280549e-01, 8.861883474482e-08, 1.8914e+01, 5.1083e-02, 
+ 2DIAGNOSTIC,   360, -5.003396280549e-01, 8.837263860365e-08, 1.8959e+01, 4.5079e-02, 
+ 2DIAGNOSTIC,   361, -5.003396280549e-01, 8.812780661130e-08, 1.9003e+01, 4.4602e-02, 
+ 2DIAGNOSTIC,   362, -5.003396280549e-01, 8.788432746083e-08, 1.9050e+01, 4.6952e-02, 
+ 2DIAGNOSTIC,   363, -5.003396280549e-01, 8.764218997065e-08, 1.9096e+01, 4.5743e-02, 
+ 2DIAGNOSTIC,   364, -5.003396280549e-01, 8.740138307886e-08, 1.9143e+01, 4.6614e-02, 
+ 2DIAGNOSTIC,   365, -5.003396280549e-01, 8.716189585194e-08, 1.9187e+01, 4.4506e-02, 
+ 2DIAGNOSTIC,   366, -5.003396280549e-01, 8.692371746910e-08, 1.9235e+01, 4.7372e-02, 
+ 2DIAGNOSTIC,   367, -5.003396280549e-01, 8.668683722929e-08, 1.9279e+01, 4.4510e-02, 
+ 2DIAGNOSTIC,   368, -5.003396280549e-01, 8.645124455068e-08, 1.9332e+01, 5.2668e-02, 
+ 2DIAGNOSTIC,   369, -5.003396280549e-01, 8.621692896118e-08, 1.9377e+01, 4.5807e-02, 
+ 2DIAGNOSTIC,   370, -5.003396280549e-01, 8.598388010709e-08, 1.9425e+01, 4.7297e-02, 
+ 2DIAGNOSTIC,   371, -5.003396280549e-01, 8.575208774401e-08, 1.9471e+01, 4.6359e-02, 
+ 2DIAGNOSTIC,   372, -5.003396280549e-01, 8.552154173508e-08, 1.9518e+01, 4.6670e-02, 
+ 2DIAGNOSTIC,   373, -5.003396280549e-01, 8.529223205749e-08, 1.9563e+01, 4.5140e-02, 
+ 2DIAGNOSTIC,   374, -5.003396280549e-01, 8.506414879081e-08, 1.9612e+01, 4.8550e-02, 
+ 2DIAGNOSTIC,   375, -5.003396280549e-01, 8.483728212516e-08, 1.9659e+01, 4.7034e-02, 
+ 2DIAGNOSTIC,   376, -5.003396280549e-01, 8.461162234871e-08, 1.9705e+01, 4.6155e-02, 
+ 2DIAGNOSTIC,   377, -5.003396280549e-01, 8.438715985845e-08, 1.9751e+01, 4.5863e-02, 
+ 2DIAGNOSTIC,   378, -5.003396280549e-01, 8.416388515200e-08, 1.9796e+01, 4.5247e-02, 
+ 2DIAGNOSTIC,   379, -5.003396280549e-01, 8.394178882326e-08, 1.9848e+01, 5.2156e-02, 
+ 2DIAGNOSTIC,   380, -5.003396280549e-01, 8.372086157107e-08, 1.9896e+01, 4.8395e-02, 
+ 2DIAGNOSTIC,   381, -5.003396280549e-01, 8.350109418579e-08, 1.9942e+01, 4.5523e-02, 
+ 2DIAGNOSTIC,   382, -5.003396280549e-01, 8.328247756142e-08, 1.9985e+01, 4.3466e-02, 
+ 2DIAGNOSTIC,   383, -5.003396280549e-01, 8.306500268044e-08, 2.0032e+01, 4.6969e-02, 
+ 2DIAGNOSTIC,   384, -5.003396280549e-01, 8.284866062115e-08, 2.0078e+01, 4.5848e-02, 
+ 2DIAGNOSTIC,   385, -5.003396280549e-01, 8.263344255599e-08, 2.0123e+01, 4.4839e-02, 
+ 2DIAGNOSTIC,   386, -5.003396280549e-01, 8.241933975020e-08, 2.0169e+01, 4.5970e-02, 
+ 2DIAGNOSTIC,   387, -5.003396280549e-01, 8.220634355400e-08, 2.0214e+01, 4.4666e-02, 
+ 2DIAGNOSTIC,   388, -5.003396280549e-01, 8.199444541303e-08, 2.0258e+01, 4.4604e-02, 
+ 2DIAGNOSTIC,   389, -5.003396280549e-01, 8.178363685623e-08, 2.0306e+01, 4.7376e-02, 
+ 2DIAGNOSTIC,   390, -5.003396280549e-01, 8.157390950052e-08, 2.0361e+01, 5.5139e-02, 
+ 2DIAGNOSTIC,   391, -5.003396280549e-01, 8.136525505090e-08, 2.0413e+01, 5.2708e-02, 
+ 2DIAGNOSTIC,   392, -5.003396280549e-01, 8.115766529562e-08, 2.0471e+01, 5.7414e-02, 
+ 2DIAGNOSTIC,   393, -5.003396280549e-01, 8.095113210446e-08, 2.0524e+01, 5.3583e-02, 
+ 2DIAGNOSTIC,   394, -5.003396280549e-01, 8.074564743221e-08, 2.0572e+01, 4.7875e-02, 
+ 2DIAGNOSTIC,   395, -5.003396280549e-01, 8.054120331519e-08, 2.0618e+01, 4.5230e-02, 
+ 2DIAGNOSTIC,   396, -5.003396280549e-01, 8.033779186909e-08, 2.0664e+01, 4.6897e-02, 
+ 2DIAGNOSTIC,   397, -5.003396280549e-01, 8.013540529024e-08, 2.0713e+01, 4.8046e-02, 
+ 2DIAGNOSTIC,   398, -5.003396280549e-01, 7.993403584958e-08, 2.0761e+01, 4.8604e-02, 
+ 2DIAGNOSTIC,   399, -5.003396280549e-01, 7.973367590307e-08, 2.0807e+01, 4.6162e-02, 
+ 2DIAGNOSTIC,   400, -5.003396280549e-01, 7.953431787298e-08, 2.0855e+01, 4.7674e-02, 
+ 2DIAGNOSTIC,   401, -5.003396280549e-01, 7.933595426836e-08, 2.0902e+01, 4.7063e-02, 
+ 2DIAGNOSTIC,   402, -5.003396280549e-01, 7.913857766285e-08, 2.0948e+01, 4.5822e-02, 
+ 2DIAGNOSTIC,   403, -5.003396280549e-01, 7.894218071076e-08, 2.0994e+01, 4.6335e-02, 
+ 2DIAGNOSTIC,   404, -5.003396280549e-01, 7.874675613667e-08, 2.1041e+01, 4.7266e-02, 
+ 2DIAGNOSTIC,   405, -5.003396280549e-01, 7.855229673583e-08, 2.1092e+01, 5.1027e-02, 
+ 2DIAGNOSTIC,   406, -5.003396280549e-01, 7.835879537637e-08, 2.1144e+01, 5.1833e-02, 
+ 2DIAGNOSTIC,   407, -5.003396280549e-01, 7.816624499361e-08, 2.1197e+01, 5.2251e-02, 
+ 2DIAGNOSTIC,   408, -5.003396280549e-01, 7.797463859706e-08, 2.1250e+01, 5.3386e-02, 
+ 2DIAGNOSTIC,   409, -5.003396280549e-01, 7.778396926171e-08, 2.1299e+01, 4.8588e-02, 
+ 2DIAGNOSTIC,   410, -5.003396280549e-01, 7.759423012845e-08, 2.1355e+01, 5.6156e-02, 
+ 2DIAGNOSTIC,   411, -5.003396280549e-01, 7.740541440671e-08, 2.1407e+01, 5.2199e-02, 
+ 2DIAGNOSTIC,   412, -5.003396280549e-01, 7.721751537227e-08, 2.1459e+01, 5.2174e-02, 
+ 2DIAGNOSTIC,   413, -5.003396280549e-01, 7.703052636639e-08, 2.1510e+01, 5.1123e-02, 
+ 2DIAGNOSTIC,   414, -5.003396280549e-01, 7.684444079496e-08, 2.1558e+01, 4.8062e-02, 
+ 2DIAGNOSTIC,   415, -5.003396280549e-01, 7.665925212371e-08, 2.1611e+01, 5.2998e-02, 
+ 2DIAGNOSTIC,   416, -5.003396280549e-01, 7.647495388428e-08, 2.1668e+01, 5.6732e-02, 
+ 2DIAGNOSTIC,   417, -5.003396280549e-01, 7.629153967164e-08, 2.1723e+01, 5.4633e-02, 
+ 2DIAGNOSTIC,   418, -5.003396280549e-01, 7.610900313888e-08, 2.1776e+01, 5.3363e-02, 
+ 2DIAGNOSTIC,   419, -5.003396280549e-01, 7.592733800152e-08, 2.1828e+01, 5.2454e-02, 
+ 2DIAGNOSTIC,   420, -5.003396280549e-01, 7.574653803537e-08, 2.1881e+01, 5.2312e-02, 
+ 2DIAGNOSTIC,   421, -5.003396280549e-01, 7.556659707437e-08, 2.1929e+01, 4.8385e-02, 
+ 2DIAGNOSTIC,   422, -5.003396280549e-01, 7.538750900838e-08, 2.1977e+01, 4.7799e-02, 
+ 2DIAGNOSTIC,   423, -5.003396280549e-01, 7.520926779319e-08, 2.2025e+01, 4.7586e-02, 
+ 2DIAGNOSTIC,   424, -5.003396280549e-01, 7.503186743229e-08, 2.2070e+01, 4.5744e-02, 
+ 2DIAGNOSTIC,   425, -5.003396280549e-01, 7.485530199034e-08, 2.2118e+01, 4.7861e-02, 
+ 2DIAGNOSTIC,   426, -5.003396280549e-01, 7.467956558748e-08, 2.2171e+01, 5.2496e-02, 
+ 2DIAGNOSTIC,   427, -5.003396280549e-01, 7.450465239851e-08, 2.2221e+01, 5.0421e-02, 
+ 2DIAGNOSTIC,   428, -5.003396280549e-01, 7.433055665114e-08, 2.2275e+01, 5.3771e-02, 
+ 2DIAGNOSTIC,   429, -5.003396280549e-01, 7.415727263033e-08, 2.2321e+01, 4.5933e-02, 
+ 2DIAGNOSTIC,   430, -5.003396280549e-01, 7.398479467046e-08, 2.2365e+01, 4.4711e-02, 
+ 2DIAGNOSTIC,   431, -5.003396280549e-01, 7.381311716232e-08, 2.2414e+01, 4.8525e-02, 
+ 2DIAGNOSTIC,   432, -5.003396280549e-01, 7.364223454480e-08, 2.2461e+01, 4.6842e-02, 
+ 2DIAGNOSTIC,   433, -5.003396280549e-01, 7.347214131146e-08, 2.2506e+01, 4.5669e-02, 
+ 2DIAGNOSTIC,   434, -5.003396280549e-01, 7.330283200270e-08, 2.2553e+01, 4.6320e-02, 
+ 2DIAGNOSTIC,   435, -5.003396280549e-01, 7.313430121442e-08, 2.2598e+01, 4.4881e-02, 
+ 2DIAGNOSTIC,   436, -5.003396280549e-01, 7.296654358762e-08, 2.2644e+01, 4.6189e-02, 
+ 2DIAGNOSTIC,   437, -5.003396280549e-01, 7.279955381492e-08, 2.2690e+01, 4.6230e-02, 
+ 2DIAGNOSTIC,   438, -5.003396280549e-01, 7.263332663489e-08, 2.2735e+01, 4.4643e-02, 
+ 2DIAGNOSTIC,   439, -5.003396280549e-01, 7.246785683687e-08, 2.2780e+01, 4.5088e-02, 
+ 2DIAGNOSTIC,   440, -5.003396280549e-01, 7.230313925658e-08, 2.2825e+01, 4.5670e-02, 
+ 2DIAGNOSTIC,   441, -5.003396280549e-01, 7.213916877573e-08, 2.2873e+01, 4.7190e-02, 
+ 2DIAGNOSTIC,   442, -5.003396280549e-01, 7.197594032241e-08, 2.2920e+01, 4.7533e-02, 
+ 2DIAGNOSTIC,   443, -5.003396280549e-01, 7.181344887329e-08, 2.2975e+01, 5.4353e-02, 
+ 2DIAGNOSTIC,   444, -5.003396280549e-01, 7.165168944365e-08, 2.3034e+01, 5.9572e-02, 
+ 2DIAGNOSTIC,   445, -5.003396280549e-01, 7.149065710298e-08, 2.3088e+01, 5.4279e-02, 
+ 2DIAGNOSTIC,   446, -5.003396280549e-01, 7.133034695631e-08, 2.3141e+01, 5.2935e-02, 
+ 2DIAGNOSTIC,   447, -5.003396280549e-01, 7.117075415987e-08, 2.3201e+01, 5.9228e-02, 
+ 2DIAGNOSTIC,   448, -5.003396280549e-01, 7.101187390586e-08, 2.3248e+01, 4.7843e-02, 
+ 2DIAGNOSTIC,   449, -5.003396280549e-01, 7.085370143508e-08, 2.3296e+01, 4.7501e-02, 
+ 2DIAGNOSTIC,   450, -5.003396280549e-01, 7.069623202778e-08, 2.3345e+01, 4.8776e-02, 
+ 2DIAGNOSTIC,   451, -5.003396280549e-01, 7.053946100627e-08, 2.3392e+01, 4.7151e-02, 
+ 2DIAGNOSTIC,   452, -5.003396280549e-01, 7.038338373623e-08, 2.3438e+01, 4.6539e-02, 
+ 2DIAGNOSTIC,   453, -5.003396280549e-01, 7.022799562023e-08, 2.3486e+01, 4.7608e-02, 
+ 2DIAGNOSTIC,   454, -5.003396280549e-01, 7.007329210678e-08, 2.3537e+01, 5.1145e-02, 
+ 2DIAGNOSTIC,   455, -5.003396280549e-01, 6.991926867995e-08, 2.3590e+01, 5.3066e-02, 
+ 2DIAGNOSTIC,   456, -5.003396280549e-01, 6.976592086590e-08, 2.3640e+01, 4.9339e-02, 
+ 2DIAGNOSTIC,   457, -5.003396280549e-01, 6.961324422678e-08, 2.3692e+01, 5.2270e-02, 
+ 2DIAGNOSTIC,   458, -5.003396280549e-01, 6.946123436895e-08, 2.3746e+01, 5.3845e-02, 
+ 2DIAGNOSTIC,   459, -5.003396280549e-01, 6.930988693220e-08, 2.3797e+01, 5.1305e-02, 
+ 2DIAGNOSTIC,   460, -5.003396280549e-01, 6.915919759619e-08, 2.3852e+01, 5.5021e-02, 
+ 2DIAGNOSTIC,   461, -5.003396280549e-01, 6.900916207746e-08, 2.3904e+01, 5.1588e-02, 
+ 2DIAGNOSTIC,   462, -5.003396280549e-01, 6.885977613114e-08, 2.3960e+01, 5.6465e-02, 
+ 2DIAGNOSTIC,   463, -5.003396280549e-01, 6.871103554618e-08, 2.4012e+01, 5.2154e-02, 
+ 2DIAGNOSTIC,   464, -5.003396280549e-01, 6.856293615102e-08, 2.4064e+01, 5.1312e-02, 
+ 2DIAGNOSTIC,   465, -5.003396280549e-01, 6.841547380747e-08, 2.4112e+01, 4.8126e-02, 
+ 2DIAGNOSTIC,   466, -5.003396280549e-01, 6.826864441594e-08, 2.4162e+01, 5.0319e-02, 
+ 2DIAGNOSTIC,   467, -5.003396280549e-01, 6.812244390808e-08, 2.4210e+01, 4.8522e-02, 
+ 2DIAGNOSTIC,   468, -5.003396280549e-01, 6.797686825195e-08, 2.4262e+01, 5.1647e-02, 
+ 2DIAGNOSTIC,   469, -5.003396280549e-01, 6.783191345075e-08, 2.4313e+01, 5.0626e-02, 
+ 2DIAGNOSTIC,   470, -5.003396280549e-01, 6.768757554150e-08, 2.4363e+01, 4.9806e-02, 
+ 2DIAGNOSTIC,   471, -5.003396280549e-01, 6.754385059463e-08, 2.4413e+01, 5.0776e-02, 
+ 2DIAGNOSTIC,   472, -5.003396280549e-01, 6.740073471264e-08, 2.4470e+01, 5.6574e-02, 
+ 2DIAGNOSTIC,   473, -5.003396280549e-01, 6.725822403403e-08, 2.4525e+01, 5.5470e-02, 
+ 2DIAGNOSTIC,   474, -5.003396280549e-01, 6.711631472681e-08, 2.4580e+01, 5.5078e-02, 
+ 2DIAGNOSTIC,   475, -5.003396280549e-01, 6.697500299106e-08, 2.4633e+01, 5.2040e-02, 
+ 2DIAGNOSTIC,   476, -5.003396280549e-01, 6.683428506416e-08, 2.4686e+01, 5.3699e-02, 
+ 2DIAGNOSTIC,   477, -5.003396280549e-01, 6.669415720823e-08, 2.4738e+01, 5.1396e-02, 
+ 2DIAGNOSTIC,   478, -5.003396280549e-01, 6.655461571962e-08, 2.4787e+01, 4.8956e-02, 
+ 2DIAGNOSTIC,   479, -5.003396280549e-01, 6.641565692507e-08, 2.4835e+01, 4.8579e-02, 
+ 2DIAGNOSTIC,   480, -5.003396280549e-01, 6.627727718381e-08, 2.4883e+01, 4.7804e-02, 
+ 2DIAGNOSTIC,   481, -5.003396280549e-01, 6.613947288328e-08, 2.4931e+01, 4.7955e-02, 
+ 2DIAGNOSTIC,   482, -5.003396280549e-01, 6.600224044129e-08, 2.4980e+01, 4.8851e-02, 
+ 2DIAGNOSTIC,   483, -5.003396280549e-01, 6.586557630599e-08, 2.5030e+01, 5.0107e-02, 
+ 2DIAGNOSTIC,   484, -5.003396280549e-01, 6.572947695502e-08, 2.5080e+01, 5.0039e-02, 
+ 2DIAGNOSTIC,   485, -5.003396280549e-01, 6.559393889334e-08, 2.5128e+01, 4.7700e-02, 
+ 2DIAGNOSTIC,   486, -5.003396280549e-01, 6.545895865628e-08, 2.5177e+01, 4.9706e-02, 
+ 2DIAGNOSTIC,   487, -5.003396280549e-01, 6.532453280779e-08, 2.5227e+01, 5.0203e-02, 
+ 2DIAGNOSTIC,   488, -5.003396280549e-01, 6.519065793784e-08, 2.5279e+01, 5.1828e-02, 
+ 2DIAGNOSTIC,   489, -5.003396280549e-01, 6.505733066804e-08, 2.5331e+01, 5.1618e-02, 
+ 2DIAGNOSTIC,   490, -5.003396280549e-01, 6.492454764345e-08, 2.5384e+01, 5.2888e-02, 
+ 2DIAGNOSTIC,   491, -5.003396280549e-01, 6.479230553989e-08, 2.5433e+01, 4.9144e-02, 
+ 2DIAGNOSTIC,   492, -5.003396280549e-01, 6.466060105794e-08, 2.5485e+01, 5.2073e-02, 
+ 2DIAGNOSTIC,   493, -5.003396280549e-01, 6.452943092632e-08, 2.5535e+01, 4.9947e-02, 
+ 2DIAGNOSTIC,   494, -5.003396280549e-01, 6.439879189808e-08, 2.5584e+01, 4.8919e-02, 
+ 2DIAGNOSTIC,   495, -5.003396280549e-01, 6.426868075660e-08, 2.5634e+01, 5.0395e-02, 
+ 2DIAGNOSTIC,   496, -5.003396280549e-01, 6.413909430696e-08, 2.5685e+01, 5.0390e-02, 
+ 2DIAGNOSTIC,   497, -5.003396280549e-01, 6.401002938198e-08, 2.5738e+01, 5.3398e-02, 
+ 2DIAGNOSTIC,   498, -5.003396280549e-01, 6.388148284008e-08, 2.5792e+01, 5.4081e-02, 
+ 2DIAGNOSTIC,   499, -5.003396280549e-01, 6.375345156396e-08, 2.5844e+01, 5.1579e-02, 
+ 2DIAGNOSTIC,   500, -5.003396280549e-01, 6.362593246191e-08, 2.5897e+01, 5.3396e-02, 
+DIAGNOSTIC,Iteration,metricValue,convergenceValue,ITERATION_TIME_INDEX,SINCE_LAST
+ 2DIAGNOSTIC,     1, -4.324741821711e-01, 1.797693134862e+308, 2.6774e+01, 8.7680e-01, 
+ 2DIAGNOSTIC,     2, -4.325814617651e-01, 1.797693134862e+308, 2.7056e+01, 2.8187e-01, 
+ 2DIAGNOSTIC,     3, -4.326853648808e-01, 1.797693134862e+308, 2.7340e+01, 2.8369e-01, 
+ 2DIAGNOSTIC,     4, -4.327761818391e-01, 1.797693134862e+308, 2.7628e+01, 2.8875e-01, 
+ 2DIAGNOSTIC,     5, -4.328851105694e-01, 1.797693134862e+308, 2.7965e+01, 3.3684e-01, 
+ 2DIAGNOSTIC,     6, -4.331142920368e-01, 1.797693134862e+308, 2.8374e+01, 4.0930e-01, 
+ 2DIAGNOSTIC,     7, -4.331617767654e-01, 1.797693134862e+308, 2.8882e+01, 5.0772e-01, 
+ 2DIAGNOSTIC,     8, -4.331624123439e-01, 1.797693134862e+308, 2.9223e+01, 3.4122e-01, 
+ 2DIAGNOSTIC,     9, -4.331623154729e-01, 1.797693134862e+308, 2.9548e+01, 3.2508e-01, 
+ 2DIAGNOSTIC,    10, -4.331621901210e-01, 1.179553865297e-04, 2.9933e+01, 3.8427e-01, 
+ 2DIAGNOSTIC,    11, -4.331621229639e-01, 8.677854852751e-05, 3.0273e+01, 3.3987e-01, 
+ 2DIAGNOSTIC,    12, -4.331620142536e-01, 5.904468491540e-05, 3.0617e+01, 3.4453e-01, 
+ 2DIAGNOSTIC,    13, -4.331619483563e-01, 3.584501038197e-05, 3.0951e+01, 3.3352e-01, 
+ 2DIAGNOSTIC,    14, -4.331620341113e-01, 1.720899008256e-05, 3.1382e+01, 4.3103e-01, 
+ 2DIAGNOSTIC,    15, -4.331618891540e-01, 4.193183563941e-06, 3.1719e+01, 3.3787e-01, 
+ 2DIAGNOSTIC,    16, -4.331616237707e-01, 1.950329589009e-06, 3.2055e+01, 3.3568e-01, 
+ 2DIAGNOSTIC,    17, -4.331614883884e-01, 1.802613501349e-06, 3.2391e+01, 3.3540e-01, 
+ 2DIAGNOSTIC,    18, -4.331613991963e-01, 1.697617874587e-06, 3.2677e+01, 2.8592e-01, 
+ 2DIAGNOSTIC,    19, -4.331611707457e-01, 1.598836120983e-06, 3.2962e+01, 2.8529e-01, 
+ 2DIAGNOSTIC,    20, -4.331613693749e-01, 1.519583629726e-06, 3.3294e+01, 3.3235e-01, 
+ 2DIAGNOSTIC,    21, -4.331611051892e-01, 1.444154046924e-06, 3.3621e+01, 3.2639e-01, 
+ 2DIAGNOSTIC,    22, -4.331610885227e-01, 1.378783675718e-06, 3.3901e+01, 2.8001e-01, 
+ 2DIAGNOSTIC,    23, -4.331609420145e-01, 1.319206712883e-06, 3.4275e+01, 3.7481e-01, 
+ 2DIAGNOSTIC,    24, -4.331608760582e-01, 1.271203730599e-06, 3.4564e+01, 2.8835e-01, 
+ 2DIAGNOSTIC,    25, -4.331607619435e-01, 1.225436203095e-06, 3.4846e+01, 2.8195e-01, 
+ 2DIAGNOSTIC,    26, -4.331607693026e-01, 1.181194850958e-06, 3.5174e+01, 3.2792e-01, 
+ 2DIAGNOSTIC,    27, -4.331608354726e-01, 1.142608466148e-06, 3.5460e+01, 2.8629e-01, 
+ 2DIAGNOSTIC,    28, -4.331611368191e-01, 1.115213985520e-06, 3.5803e+01, 3.4282e-01, 
+ 2DIAGNOSTIC,    29, -4.331613741942e-01, 1.091567913905e-06, 3.6145e+01, 3.4190e-01, 
+ 2DIAGNOSTIC,    30, -4.331614156178e-01, 1.075383934124e-06, 3.6474e+01, 3.2967e-01, 
+ 2DIAGNOSTIC,    31, -4.331614018185e-01, 1.053044029836e-06, 3.6788e+01, 3.1377e-01, 
+ 2DIAGNOSTIC,    32, -4.331612236831e-01, 1.025655544454e-06, 3.7228e+01, 4.3991e-01, 
+ 2DIAGNOSTIC,    33, -4.331611076492e-01, 9.917264716802e-07, 3.7538e+01, 3.0995e-01, 
+ 2DIAGNOSTIC,    34, -4.331607895131e-01, 9.497596549259e-07, 3.7851e+01, 3.1352e-01, 
+ 2DIAGNOSTIC,    35, -4.331608179537e-01, 9.074171163775e-07, 3.8165e+01, 3.1354e-01, 
+ 2DIAGNOSTIC,    36, -4.331606794734e-01, 8.651845845621e-07, 3.8435e+01, 2.6958e-01, 
+ 2DIAGNOSTIC,    37, -4.331605526004e-01, 8.258810542984e-07, 3.8704e+01, 2.6996e-01, 
+ 2DIAGNOSTIC,    38, -4.331606195750e-01, 7.982380459300e-07, 3.9022e+01, 3.1749e-01, 
+ 2DIAGNOSTIC,    39, -4.331605480124e-01, 7.784469852022e-07, 3.9335e+01, 3.1279e-01, 
+ 2DIAGNOSTIC,    40, -4.331604752147e-01, 7.626625125393e-07, 3.9604e+01, 2.6896e-01, 
+ 2DIAGNOSTIC,    41, -4.331599354340e-01, 7.419650973270e-07, 3.9922e+01, 3.1784e-01, 
+ 2DIAGNOSTIC,    42, -4.331602237151e-01, 7.274660830808e-07, 4.0272e+01, 3.5057e-01, 
+ 2DIAGNOSTIC,    43, -4.331599824625e-01, 7.109177205707e-07, 4.0617e+01, 3.4532e-01, 
+ 2DIAGNOSTIC,    44, -4.331600437700e-01, 6.940318891639e-07, 4.0954e+01, 3.3665e-01, 
+ 2DIAGNOSTIC,    45, -4.331599540535e-01, 6.798814894474e-07, 4.1296e+01, 3.4147e-01, 
+ 2DIAGNOSTIC,    46, -4.331598518199e-01, 6.656611076794e-07, 4.1585e+01, 2.8961e-01, 
+ 2DIAGNOSTIC,    47, -4.331593920747e-01, 6.462968333218e-07, 4.1882e+01, 2.9644e-01, 
+ 2DIAGNOSTIC,    48, -4.331596621916e-01, 6.353537172279e-07, 4.2163e+01, 2.8147e-01, 
+ 2DIAGNOSTIC,    49, -4.331598803699e-01, 6.292555545795e-07, 4.2489e+01, 3.2624e-01, 
+ 2DIAGNOSTIC,    50, -4.331595509203e-01, 6.201210458953e-07, 4.2920e+01, 4.3076e-01, 
+ 2DIAGNOSTIC,    51, -4.331594673380e-01, 6.050022189029e-07, 4.3207e+01, 2.8705e-01, 
+ 2DIAGNOSTIC,    52, -4.331592271790e-01, 5.930678378223e-07, 4.3535e+01, 3.2752e-01, 
+ 2DIAGNOSTIC,    53, -4.331589919470e-01, 5.773867734656e-07, 4.3874e+01, 3.3984e-01, 
+ 2DIAGNOSTIC,    54, -4.331589518906e-01, 5.646529023760e-07, 4.4206e+01, 3.3153e-01, 
+ 2DIAGNOSTIC,    55, -4.331588994921e-01, 5.530523061112e-07, 4.4540e+01, 3.3349e-01, 
+ 2DIAGNOSTIC,    56, -4.331588569344e-01, 5.428493971629e-07, 4.4824e+01, 2.8455e-01, 
+ 2DIAGNOSTIC,    57, -4.331590133965e-01, 5.318774159782e-07, 4.5123e+01, 2.9876e-01, 
+ 2DIAGNOSTIC,    58, -4.331589786712e-01, 5.263293913239e-07, 4.5448e+01, 3.2547e-01, 
+ 2DIAGNOSTIC,    59, -4.331588272465e-01, 5.239377967210e-07, 4.5729e+01, 2.8046e-01, 
+ 2DIAGNOSTIC,    60, -4.331588187354e-01, 5.194341878775e-07, 4.6057e+01, 3.2861e-01, 
+ 2DIAGNOSTIC,    61, -4.331586291592e-01, 5.131939338175e-07, 4.6489e+01, 4.3186e-01, 
+ 2DIAGNOSTIC,    62, -4.331585519029e-01, 5.046594659663e-07, 4.6828e+01, 3.3868e-01, 
+ 2DIAGNOSTIC,    63, -4.331584523802e-01, 4.937244013799e-07, 4.7109e+01, 2.8132e-01, 
+ 2DIAGNOSTIC,    64, -4.331584953308e-01, 4.842949354704e-07, 4.7433e+01, 3.2387e-01, 
+ 2DIAGNOSTIC,    65, -4.331582704727e-01, 4.735901472930e-07, 4.7759e+01, 3.2599e-01, 
+ 2DIAGNOSTIC,    66, -4.331581749252e-01, 4.633766386430e-07, 4.8088e+01, 3.2879e-01, 
+ 2DIAGNOSTIC,    67, -4.331579604414e-01, 4.547160675737e-07, 4.8416e+01, 3.2853e-01, 
+ 2DIAGNOSTIC,    68, -4.331578432019e-01, 4.468219254039e-07, 4.8707e+01, 2.9031e-01, 
+ 2DIAGNOSTIC,    69, -4.331575924510e-01, 4.373229531632e-07, 4.9041e+01, 3.3406e-01, 
+ 2DIAGNOSTIC,    70, -4.331576594498e-01, 4.310168394313e-07, 4.9328e+01, 2.8698e-01, 
+ 2DIAGNOSTIC,    71, -4.331576273690e-01, 4.250835303286e-07, 4.9712e+01, 3.8434e-01, 
+ 2DIAGNOSTIC,    72, -4.331576587424e-01, 4.211291542953e-07, 5.0053e+01, 3.4060e-01, 
+ 2DIAGNOSTIC,    73, -4.331575371332e-01, 4.172755533102e-07, 5.0435e+01, 3.8240e-01, 
+ 2DIAGNOSTIC,    74, -4.331574234418e-01, 4.147694343589e-07, 5.0769e+01, 3.3380e-01, 
+ 2DIAGNOSTIC,    75, -4.331572841810e-01, 4.106083313152e-07, 5.1059e+01, 2.8990e-01, 
+ 2DIAGNOSTIC,    76, -4.331567217850e-01, 4.021970840939e-07, 5.1461e+01, 4.0262e-01, 
+ 2DIAGNOSTIC,    77, -4.331565825309e-01, 3.926911538357e-07, 5.1771e+01, 3.0967e-01, 
+ 2DIAGNOSTIC,    78, -4.331564505642e-01, 3.833476246544e-07, 5.2043e+01, 2.7176e-01, 
+ 2DIAGNOSTIC,    79, -4.331563085646e-01, 3.732949078357e-07, 5.2314e+01, 2.7084e-01, 
+ 2DIAGNOSTIC,    80, -4.331561657367e-01, 3.657464498347e-07, 5.2627e+01, 3.1337e-01, 
+ 2DIAGNOSTIC,    81, -4.331558819806e-01, 3.589608579095e-07, 5.2942e+01, 3.1521e-01, 
+ 2DIAGNOSTIC,    82, -4.331560369404e-01, 3.571666373874e-07, 5.3256e+01, 3.1361e-01, 
+ 2DIAGNOSTIC,    83, -4.331558791875e-01, 3.560673675369e-07, 5.3527e+01, 2.7083e-01, 
+ 2DIAGNOSTIC,    84, -4.331557441926e-01, 3.556822542727e-07, 5.3843e+01, 3.1584e-01, 
+ 2DIAGNOSTIC,    85, -4.331557551164e-01, 3.567021424518e-07, 5.4114e+01, 2.7121e-01, 
+ 2DIAGNOSTIC,    86, -4.331555982103e-01, 3.539095892735e-07, 5.4430e+01, 3.1669e-01, 
+ 2DIAGNOSTIC,    87, -4.331555818797e-01, 3.515634022493e-07, 5.4746e+01, 3.1558e-01, 
+ 2DIAGNOSTIC,    88, -4.331554512495e-01, 3.486679332164e-07, 5.5059e+01, 3.1341e-01, 
+ 2DIAGNOSTIC,    89, -4.331553191443e-01, 3.451090841641e-07, 5.5373e+01, 3.1348e-01, 
+ 2DIAGNOSTIC,    90, -4.331551869793e-01, 3.408916336746e-07, 5.5688e+01, 3.1462e-01, 
+ 2DIAGNOSTIC,    91, -4.331549050664e-01, 3.338622136129e-07, 5.5957e+01, 2.6921e-01, 
+ 2DIAGNOSTIC,    92, -4.331549446768e-01, 3.299562689810e-07, 5.6273e+01, 3.1670e-01, 
+ 2DIAGNOSTIC,    93, -4.331550993959e-01, 3.276263588238e-07, 5.6589e+01, 3.1557e-01, 
+ 2DIAGNOSTIC,    94, -4.331546734412e-01, 3.227727563126e-07, 5.6862e+01, 2.7280e-01, 
+ 2DIAGNOSTIC,    95, -4.331545229431e-01, 3.187144337596e-07, 5.7178e+01, 3.1596e-01, 
+ 2DIAGNOSTIC,    96, -4.331547106188e-01, 3.165377051410e-07, 5.7492e+01, 3.1463e-01, 
+ 2DIAGNOSTIC,    97, -4.331545635423e-01, 3.146394932842e-07, 5.7894e+01, 4.0151e-01, 
+ 2DIAGNOSTIC,    98, -4.331542930242e-01, 3.113862048314e-07, 5.8165e+01, 2.7079e-01, 
+ 2DIAGNOSTIC,    99, -4.331540187964e-01, 3.068998142182e-07, 5.8436e+01, 2.7095e-01, 
+ 2DIAGNOSTIC,   100, -4.331536769969e-01, 3.008999625038e-07, 5.8704e+01, 2.6884e-01, 
+ 2DIAGNOSTIC,   101, -4.331537065565e-01, 2.950062437598e-07, 5.8973e+01, 2.6824e-01, 
+ 2DIAGNOSTIC,   102, -4.331532851250e-01, 2.885848650637e-07, 5.9287e+01, 3.1448e-01, 
+ 2DIAGNOSTIC,   103, -4.331531565127e-01, 2.848790812155e-07, 5.9601e+01, 3.1395e-01, 
+ 2DIAGNOSTIC,   104, -4.331530078453e-01, 2.800053603130e-07, 5.9918e+01, 3.1637e-01, 
+ 2DIAGNOSTIC,   105, -4.331527274771e-01, 2.749819793448e-07, 6.0234e+01, 3.1637e-01, 
+ 2DIAGNOSTIC,   106, -4.331524906602e-01, 2.724789986992e-07, 6.0549e+01, 3.1515e-01, 
+ 2DIAGNOSTIC,   107, -4.331520394587e-01, 2.690760222100e-07, 6.0819e+01, 2.6971e-01, 
+ 2DIAGNOSTIC,   108, -4.331517399175e-01, 2.650930750782e-07, 6.1227e+01, 4.0812e-01, 
+ 2DIAGNOSTIC,   109, -4.331515627834e-01, 2.613605151087e-07, 6.1543e+01, 3.1567e-01, 
+ 2DIAGNOSTIC,   110, -4.331513917878e-01, 2.575454877089e-07, 6.1858e+01, 3.1595e-01, 
+ 2DIAGNOSTIC,   111, -4.331509953226e-01, 2.547732158922e-07, 6.2173e+01, 3.1445e-01, 
+ 2DIAGNOSTIC,   112, -4.331510059751e-01, 2.528059840894e-07, 6.2443e+01, 2.7044e-01, 
+ 2DIAGNOSTIC,   113, -4.331506954191e-01, 2.513304220124e-07, 6.2802e+01, 3.5884e-01, 
+ 2DIAGNOSTIC,   114, -4.331504979248e-01, 2.508443056309e-07, 6.3114e+01, 3.1181e-01, 
+ 2DIAGNOSTIC,   115, -4.331501771098e-01, 2.496912993276e-07, 6.3430e+01, 3.1598e-01, 
+ 2DIAGNOSTIC,   116, -4.331498813391e-01, 2.482440858067e-07, 6.3699e+01, 2.6934e-01, 
+ 2DIAGNOSTIC,   117, -4.331497503952e-01, 2.461192860539e-07, 6.3970e+01, 2.7058e-01, 
+ 2DIAGNOSTIC,   118, -4.331497589433e-01, 2.448973602191e-07, 6.4240e+01, 2.7018e-01, 
+ 2DIAGNOSTIC,   119, -4.331497754858e-01, 2.452013461059e-07, 6.4553e+01, 3.1321e-01, 
+ 2DIAGNOSTIC,   120, -4.331496627962e-01, 2.461556352831e-07, 6.4868e+01, 3.1505e-01, 
+ 2DIAGNOSTIC,   121, -4.331493985985e-01, 2.453644638335e-07, 6.5182e+01, 3.1365e-01, 
+ 2DIAGNOSTIC,   122, -4.331492534015e-01, 2.456232044666e-07, 6.5458e+01, 2.7641e-01, 
+ 2DIAGNOSTIC,   123, -4.331488927344e-01, 2.437448489052e-07, 6.5948e+01, 4.8919e-01, 
+ 2DIAGNOSTIC,   124, -4.331489018328e-01, 2.423852037328e-07, 6.6373e+01, 4.2509e-01, 
+ 2DIAGNOSTIC,   125, -4.331487413741e-01, 2.399095647820e-07, 6.6652e+01, 2.7976e-01, 
+ 2DIAGNOSTIC,   126, -4.331484206055e-01, 2.357206495412e-07, 6.6930e+01, 2.7709e-01, 
+ 2DIAGNOSTIC,   127, -4.331482142455e-01, 2.315333189687e-07, 6.7269e+01, 3.3944e-01, 
+ 2DIAGNOSTIC,   128, -4.331482216143e-01, 2.293309599374e-07, 6.7550e+01, 2.8070e-01, 
+ 2DIAGNOSTIC,   129, -4.331482054298e-01, 2.289841724915e-07, 6.7833e+01, 2.8359e-01, 
+ 2DIAGNOSTIC,   130, -4.331480910480e-01, 2.292110221694e-07, 6.8165e+01, 3.3182e-01, 
+ 2DIAGNOSTIC,   131, -4.331479518458e-01, 2.289669275585e-07, 6.8447e+01, 2.8198e-01, 
+ 2DIAGNOSTIC,   132, -4.331481427135e-01, 2.303729442384e-07, 6.8734e+01, 2.8731e-01, 
+ 2DIAGNOSTIC,   133, -4.331480672638e-01, 2.305593667356e-07, 6.9059e+01, 3.2459e-01, 
+ 2DIAGNOSTIC,   134, -4.331482633049e-01, 2.325853341954e-07, 6.9397e+01, 3.3842e-01, 
+ 2DIAGNOSTIC,   135, -4.331475632365e-01, 2.308945003145e-07, 6.9733e+01, 3.3529e-01, 
+ 2DIAGNOSTIC,   136, -4.331475930822e-01, 2.284247893032e-07, 7.0124e+01, 3.9132e-01, 
+ 2DIAGNOSTIC,   137, -4.331473215983e-01, 2.241827409257e-07, 7.0460e+01, 3.3586e-01, 
+ 2DIAGNOSTIC,   138, -4.331473578692e-01, 2.209559563648e-07, 7.0741e+01, 2.8157e-01, 
+ 2DIAGNOSTIC,   139, -4.331473937059e-01, 2.187987138171e-07, 7.1077e+01, 3.3554e-01, 
+ 2DIAGNOSTIC,   140, -4.331474507579e-01, 2.174315970327e-07, 7.1353e+01, 2.7580e-01, 
+ 2DIAGNOSTIC,   141, -4.331474044514e-01, 2.161680924817e-07, 7.1690e+01, 3.3691e-01, 
+ 2DIAGNOSTIC,   142, -4.331474646248e-01, 2.169993000307e-07, 7.2026e+01, 3.3668e-01, 
+ 2DIAGNOSTIC,   143, -4.331473608723e-01, 2.176111208929e-07, 7.2307e+01, 2.8090e-01, 
+ 2DIAGNOSTIC,   144, -4.331471740646e-01, 2.188086951358e-07, 7.2591e+01, 2.8323e-01, 
+ 2DIAGNOSTIC,   145, -4.331471411889e-01, 2.168795358356e-07, 7.2991e+01, 4.0022e-01, 
+ 2DIAGNOSTIC,   146, -4.331471957553e-01, 2.156269812165e-07, 7.3324e+01, 3.3332e-01, 
+ 2DIAGNOSTIC,   147, -4.331469540385e-01, 2.122967519419e-07, 7.3608e+01, 2.8365e-01, 
+ 2DIAGNOSTIC,   148, -4.331470546839e-01, 2.100531852874e-07, 7.3933e+01, 3.2528e-01, 
+ 2DIAGNOSTIC,   149, -4.331470675082e-01, 2.085176276419e-07, 7.4311e+01, 3.7795e-01, 
+ 2DIAGNOSTIC,   150, -4.331466468539e-01, 2.058881628303e-07, 7.4639e+01, 3.2797e-01, 
+ 2DIAGNOSTIC,   151, -4.331463238135e-01, 2.023236548238e-07, 7.4974e+01, 3.3535e-01, 
+ 2DIAGNOSTIC,   152, -4.331459404136e-01, 1.982561543060e-07, 7.5305e+01, 3.3048e-01, 
+ 2DIAGNOSTIC,   153, -4.331458757946e-01, 1.946133553277e-07, 7.5638e+01, 3.3299e-01, 
+ 2DIAGNOSTIC,   154, -4.331458475134e-01, 1.913537087646e-07, 7.5979e+01, 3.4150e-01, 
+ 2DIAGNOSTIC,   155, -4.331459665793e-01, 1.899755192620e-07, 7.6342e+01, 3.6271e-01, 
+ 2DIAGNOSTIC,   156, -4.331458949590e-01, 1.900762779984e-07, 7.6657e+01, 3.1529e-01, 
+ 2DIAGNOSTIC,   157, -4.331455786540e-01, 1.891940661089e-07, 7.6928e+01, 2.7102e-01, 
+ 2DIAGNOSTIC,   158, -4.331456317824e-01, 1.902744966691e-07, 7.7329e+01, 4.0035e-01, 
+ 2DIAGNOSTIC,   159, -4.331456812956e-01, 1.926555336382e-07, 7.7597e+01, 2.6791e-01, 
+ 2DIAGNOSTIC,   160, -4.331454714447e-01, 1.931250705467e-07, 7.7867e+01, 2.7057e-01, 
+ 2DIAGNOSTIC,   161, -4.331454857266e-01, 1.929616172316e-07, 7.8180e+01, 3.1323e-01, 
+ 2DIAGNOSTIC,   162, -4.331454364800e-01, 1.915239952657e-07, 7.8450e+01, 2.7004e-01, 
+ 2DIAGNOSTIC,   163, -4.331456590352e-01, 1.912072618909e-07, 7.8766e+01, 3.1541e-01, 
+ 2DIAGNOSTIC,   164, -4.331464950431e-01, 1.944441531303e-07, 7.9081e+01, 3.1487e-01, 
+ 2DIAGNOSTIC,   165, -4.331466309043e-01, 1.985310059405e-07, 7.9392e+01, 3.1103e-01, 
+ 2DIAGNOSTIC,   166, -4.331469594282e-01, 2.031091578380e-07, 7.9661e+01, 2.6962e-01, 
+ 2DIAGNOSTIC,   167, -4.331474375507e-01, 2.071577057967e-07, 7.9931e+01, 2.6963e-01, 
+ 2DIAGNOSTIC,   168, -4.331508609048e-01, 2.230441570519e-07, 8.0200e+01, 2.6893e-01, 
+ 2DIAGNOSTIC,   169, -4.331569359624e-01, 2.588685008671e-07, 8.0469e+01, 2.6871e-01, 
+ 2DIAGNOSTIC,   170, -4.331737145438e-01, 3.508543020636e-07, 8.0740e+01, 2.7166e-01, 
+ 2DIAGNOSTIC,   171, -4.332108299294e-01, 5.670021450297e-07, 8.1009e+01, 2.6914e-01, 
+ 2DIAGNOSTIC,   172, -4.332522363323e-01, 8.983923698363e-07, 8.1371e+01, 3.6152e-01, 
+ 2DIAGNOSTIC,   173, -4.332647666824e-01, 1.202802628184e-06, 8.1729e+01, 3.5813e-01, 
+ 2DIAGNOSTIC,   174, -4.332713105047e-01, 1.434618156485e-06, 8.2000e+01, 2.7126e-01, 
+ 2DIAGNOSTIC,   175, -4.332719897691e-01, 1.546018210456e-06, 8.2270e+01, 2.6997e-01, 
+ 2DIAGNOSTIC,   176, -4.332857563766e-01, 1.574322248386e-06, 8.2672e+01, 4.0199e-01, 
+ 2DIAGNOSTIC,   177, -4.332823720589e-01, 1.452602838601e-06, 8.2942e+01, 2.6998e-01, 
+ 2DIAGNOSTIC,   178, -4.332845181495e-01, 1.230879054767e-06, 8.3257e+01, 3.1434e-01, 
+ 2DIAGNOSTIC,   179, -4.332851018472e-01, 9.359180077979e-07, 8.3571e+01, 3.1484e-01, 
+ 2DIAGNOSTIC,   180, -4.332906990483e-01, 6.502502572486e-07, 8.3930e+01, 3.5814e-01, 
+ 2DIAGNOSTIC,   181, -4.332942013852e-01, 4.643247368593e-07, 8.4290e+01, 3.6001e-01, 
+ 2DIAGNOSTIC,   182, -4.332946177541e-01, 4.020913581598e-07, 8.4693e+01, 4.0382e-01, 
+ 2DIAGNOSTIC,   183, -4.332947493937e-01, 3.643358111741e-07, 8.5096e+01, 4.0279e-01, 
+ 2DIAGNOSTIC,   184, -4.332944914668e-01, 3.312730295860e-07, 8.5410e+01, 3.1411e-01, 
+ 2DIAGNOSTIC,   185, -4.332945175234e-01, 2.839110088172e-07, 8.5679e+01, 2.6894e-01, 
+ 2DIAGNOSTIC,   186, -4.332944104141e-01, 2.745301044930e-07, 8.5949e+01, 2.6973e-01, 
+ 2DIAGNOSTIC,   187, -4.332943601281e-01, 2.431867058865e-07, 8.6308e+01, 3.5878e-01, 
+ 2DIAGNOSTIC,   188, -4.332943894716e-01, 2.130331414720e-07, 8.6622e+01, 3.1469e-01, 
+ 2DIAGNOSTIC,   189, -4.332942983046e-01, 1.802641744113e-07, 8.6895e+01, 2.7262e-01, 
+ 2DIAGNOSTIC,   190, -4.332943693095e-01, 1.659449282033e-07, 8.7211e+01, 3.1557e-01, 
+ 2DIAGNOSTIC,   191, -4.332947467733e-01, 1.652000357639e-07, 8.7570e+01, 3.5904e-01, 
+ 2DIAGNOSTIC,   192, -4.332946096790e-01, 1.654960543399e-07, 8.7839e+01, 2.6920e-01, 
+ 2DIAGNOSTIC,   193, -4.332943755367e-01, 1.655163920618e-07, 8.8154e+01, 3.1480e-01, 
+ 2DIAGNOSTIC,   194, -4.332944395059e-01, 1.648497749262e-07, 8.8424e+01, 2.7035e-01, 
+ 2DIAGNOSTIC,   195, -4.332942281070e-01, 1.634647502479e-07, 8.8738e+01, 3.1448e-01, 
+ 2DIAGNOSTIC,   196, -4.332942977649e-01, 1.619312567326e-07, 8.9010e+01, 2.7176e-01, 
+ 2DIAGNOSTIC,   197, -4.332944228690e-01, 1.606945343666e-07, 8.9367e+01, 3.5653e-01, 
+ 2DIAGNOSTIC,   198, -4.332944845129e-01, 1.598777164295e-07, 8.9678e+01, 3.1152e-01, 
+ 2DIAGNOSTIC,   199, -4.332941810167e-01, 1.578542664074e-07, 8.9992e+01, 3.1361e-01, 
+ 2DIAGNOSTIC,   200, -4.332942133084e-01, 1.563829980034e-07, 9.0306e+01, 3.1427e-01, 
+ 2DIAGNOSTIC,   201, -4.332944401663e-01, 1.571558759048e-07, 9.0628e+01, 3.2152e-01, 
+ 2DIAGNOSTIC,   202, -4.332941563595e-01, 1.566347459740e-07, 9.0944e+01, 3.1614e-01, 
+ 2DIAGNOSTIC,   203, -4.332943395728e-01, 1.560655935639e-07, 9.1259e+01, 3.1485e-01, 
+ 2DIAGNOSTIC,   204, -4.332878196894e-01, 1.348331529170e-07, 9.1573e+01, 3.1428e-01, 
+ 2DIAGNOSTIC,   205, -4.332880826263e-01, 1.166207149487e-07, 9.1889e+01, 3.1619e-01, 
+ 2DIAGNOSTIC,   206, -4.332877722528e-01, 1.012767415209e-07, 9.2160e+01, 2.7048e-01, 
+ 2DIAGNOSTIC,   207, -4.332876703501e-01, 9.102777881898e-08, 9.2431e+01, 2.7114e-01, 
+ 2DIAGNOSTIC,   208, -4.332881750681e-01, 8.888847246626e-08, 9.2745e+01, 3.1385e-01, 
+ 2DIAGNOSTIC,   209, -4.332883978329e-01, 9.302079966890e-08, 9.3015e+01, 2.7049e-01, 
+ 2DIAGNOSTIC,   210, -4.332877778659e-01, 1.010815762108e-07, 9.3329e+01, 3.1363e-01, 
+ 2DIAGNOSTIC,   211, -4.332870462781e-01, 1.122115005359e-07, 9.3598e+01, 2.6930e-01, 
+ 2DIAGNOSTIC,   212, -4.332873033865e-01, 1.267200084283e-07, 9.3958e+01, 3.5957e-01, 
+ 2DIAGNOSTIC,   213, -4.332875139842e-01, 1.450419264788e-07, 9.4272e+01, 3.1432e-01, 
+ 2DIAGNOSTIC,   214, -4.332874323418e-01, 1.432797453295e-07, 9.4542e+01, 2.7038e-01, 
+ 2DIAGNOSTIC,   215, -4.332875335185e-01, 1.432852833423e-07, 9.4811e+01, 2.6870e-01, 
+ 2DIAGNOSTIC,   216, -4.332867082440e-01, 1.403782767312e-07, 9.5127e+01, 3.1558e-01, 
+ 2DIAGNOSTIC,   217, -4.332867687725e-01, 1.380452216348e-07, 9.5441e+01, 3.1444e-01, 
+ 2DIAGNOSTIC,   218, -4.332862238059e-01, 1.363277444145e-07, 9.5712e+01, 2.7071e-01, 
+ 2DIAGNOSTIC,   219, -4.332862896181e-01, 1.364765348372e-07, 9.6029e+01, 3.1685e-01, 
+ 2DIAGNOSTIC,   220, -4.332867620233e-01, 1.371068077127e-07, 9.6344e+01, 3.1518e-01, 
+ 2DIAGNOSTIC,   221, -4.332865404139e-01, 1.355909831913e-07, 9.6616e+01, 2.7251e-01, 
+ 2DIAGNOSTIC,   222, -4.332863001891e-01, 1.349900580240e-07, 9.6974e+01, 3.5746e-01, 
+ 2DIAGNOSTIC,   223, -4.332853310177e-01, 1.330059180684e-07, 9.7245e+01, 2.7167e-01, 
+ 2DIAGNOSTIC,   224, -4.332864502993e-01, 1.350457949035e-07, 9.7650e+01, 4.0458e-01, 
+ 2DIAGNOSTIC,   225, -4.332860788265e-01, 1.368458749443e-07, 9.7965e+01, 3.1506e-01, 
+ 2DIAGNOSTIC,   226, -4.332851329659e-01, 1.339445228560e-07, 9.8279e+01, 3.1423e-01, 
+ 2DIAGNOSTIC,   227, -4.332848403202e-01, 1.312766452878e-07, 9.8593e+01, 3.1334e-01, 
+ 2DIAGNOSTIC,   228, -4.332844270759e-01, 1.267525324457e-07, 9.8908e+01, 3.1524e-01, 
+ 2DIAGNOSTIC,   229, -4.332841481430e-01, 1.227861192721e-07, 9.9177e+01, 2.6966e-01, 
+ 2DIAGNOSTIC,   230, -4.332840346116e-01, 1.214271325477e-07, 9.9547e+01, 3.6921e-01, 
+ 2DIAGNOSTIC,   231, -4.332840506779e-01, 1.212142506195e-07, 9.9879e+01, 3.3241e-01, 
+ 2DIAGNOSTIC,   232, -4.332835699443e-01, 1.206837839211e-07, 1.0022e+02, 3.4158e-01, 
+ 2DIAGNOSTIC,   233, -4.332837105680e-01, 1.193412535270e-07, 1.0051e+02, 2.9007e-01, 
+ 2DIAGNOSTIC,   234, -4.332833134454e-01, 1.216882252837e-07, 1.0085e+02, 3.4287e-01, 
+ 2DIAGNOSTIC,   235, -4.332834726326e-01, 1.248834906823e-07, 1.0119e+02, 3.3270e-01, 
+ 2DIAGNOSTIC,   236, -4.332831560307e-01, 1.255483533897e-07, 1.0147e+02, 2.8797e-01, 
+ 2DIAGNOSTIC,   237, -4.332835215993e-01, 1.273641095133e-07, 1.0181e+02, 3.3467e-01, 
+ 2DIAGNOSTIC,   238, -4.332832724248e-01, 1.279986996108e-07, 1.0215e+02, 3.3862e-01, 
+ 2DIAGNOSTIC,   239, -4.332834320240e-01, 1.288750901222e-07, 1.0253e+02, 3.8288e-01, 
+ 2DIAGNOSTIC,   240, -4.332831689056e-01, 1.291134789014e-07, 1.0282e+02, 2.8896e-01, 
+ 2DIAGNOSTIC,   241, -4.332827603492e-01, 1.286666530750e-07, 1.0316e+02, 3.4124e-01, 
+ 2DIAGNOSTIC,   242, -4.332829351632e-01, 1.277232503146e-07, 1.0350e+02, 3.3780e-01, 
+ 2DIAGNOSTIC,   243, -4.332831150723e-01, 1.280082375342e-07, 1.0384e+02, 3.3936e-01, 
+ 2DIAGNOSTIC,   244, -4.332831877551e-01, 1.276689486291e-07, 1.0422e+02, 3.8587e-01, 
+ 2DIAGNOSTIC,   245, -4.332829177463e-01, 1.273490597619e-07, 1.0456e+02, 3.3291e-01, 
+ 2DIAGNOSTIC,   246, -4.332826465909e-01, 1.257303712567e-07, 1.0489e+02, 3.3729e-01, 
+ 2DIAGNOSTIC,   247, -4.332826670371e-01, 1.255238174314e-07, 1.0524e+02, 3.4849e-01, 
+ 2DIAGNOSTIC,   248, -4.332823937647e-01, 1.241868832500e-07, 1.0564e+02, 3.9927e-01, 
+ 2DIAGNOSTIC,   249, -4.332821308677e-01, 1.230103794641e-07, 1.0599e+02, 3.5260e-01, 
+ 2DIAGNOSTIC,   250, -4.332820095395e-01, 1.213688123310e-07, 1.0629e+02, 2.9614e-01, 
+DIAGNOSTIC,Iteration,metricValue,convergenceValue,ITERATION_TIME_INDEX,SINCE_LAST
+ 2DIAGNOSTIC,     1, -3.816179703258e-01, 1.797693134862e+308, 1.0854e+02, 2.2523e+00, 
+ 2DIAGNOSTIC,     2, -3.817115488043e-01, 1.797693134862e+308, 1.0997e+02, 1.4291e+00, 
+ 2DIAGNOSTIC,     3, -3.818290611585e-01, 1.797693134862e+308, 1.1141e+02, 1.4402e+00, 
+ 2DIAGNOSTIC,     4, -3.818658133808e-01, 1.797693134862e+308, 1.1613e+02, 4.7159e+00, 
+ 2DIAGNOSTIC,     5, -3.818658205569e-01, 1.797693134862e+308, 1.1794e+02, 1.8168e+00, 
+ 2DIAGNOSTIC,     6, -3.818658182145e-01, 1.797693134862e+308, 1.2272e+02, 4.7712e+00, 
+ 2DIAGNOSTIC,     7, -3.818658182142e-01, 1.797693134862e+308, 1.2621e+02, 3.4932e+00, 
+ 2DIAGNOSTIC,     8, -3.818658182142e-01, 1.797693134862e+308, 1.2813e+02, 1.9244e+00, 
+ 2DIAGNOSTIC,     9, -3.818658182142e-01, 1.797693134862e+308, 1.2984e+02, 1.7108e+00, 
+ 2DIAGNOSTIC,    10, -3.818658182142e-01, 3.358220360512e-05, 1.3140e+02, 1.5560e+00, 
+ 2DIAGNOSTIC,    11, -3.818658182142e-01, 1.550398111518e-05, 1.3292e+02, 1.5213e+00, 
+ 2DIAGNOSTIC,    12, -3.818658182142e-01, 4.931217534143e-06, 1.3464e+02, 1.7228e+00, 
+ 2DIAGNOSTIC,    13, -3.818658182142e-01, 2.447293043967e-06, 1.3618e+02, 1.5324e+00, 
+ 2DIAGNOSTIC,    14, -3.818658182142e-01, 2.272199317782e-06, 1.3770e+02, 1.5260e+00, 
+ 2DIAGNOSTIC,    15, -3.818658182142e-01, 2.120824007010e-06, 1.3923e+02, 1.5297e+00, 
+ 2DIAGNOSTIC,    16, -3.818658182142e-01, 1.988263001365e-06, 1.4079e+02, 1.5575e+00, 
+ 2DIAGNOSTIC,    17, -3.818658182142e-01, 1.871298446920e-06, 1.4231e+02, 1.5237e+00, 
+ 2DIAGNOSTIC,    18, -3.818658182142e-01, 1.767330783796e-06, 1.4383e+02, 1.5193e+00, 
+ 2DIAGNOSTIC,    19, -3.818658182142e-01, 1.674307747238e-06, 1.4536e+02, 1.5234e+00, 
+ 2DIAGNOSTIC,    20, -3.818658182142e-01, 1.590587548915e-06, 1.4689e+02, 1.5298e+00, 
+ 2DIAGNOSTIC,    21, -3.818658182142e-01, 1.514841139194e-06, 1.4840e+02, 1.5099e+00, 
+ 2DIAGNOSTIC,    22, -3.818658182142e-01, 1.445981126440e-06, 1.4992e+02, 1.5187e+00, 
+ 2DIAGNOSTIC,    23, -3.818658182142e-01, 1.383109240138e-06, 1.5164e+02, 1.7265e+00, 
+ 2DIAGNOSTIC,    24, -3.818658182142e-01, 1.325476928604e-06, 1.5316e+02, 1.5137e+00, 
+ 2DIAGNOSTIC,    25, -3.818658182142e-01, 1.272455413932e-06, 1.5468e+02, 1.5206e+00, 
+ 2DIAGNOSTIC,    26, -3.818658182142e-01, 1.223512657640e-06, 1.5619e+02, 1.5172e+00, 
+ 2DIAGNOSTIC,    27, -3.818658182142e-01, 1.178195445040e-06, 1.5774e+02, 1.5438e+00, 
+ 2DIAGNOSTIC,    28, -3.818658182142e-01, 1.136115309081e-06, 1.5927e+02, 1.5323e+00, 
+ 2DIAGNOSTIC,    29, -3.818658182142e-01, 1.096937366454e-06, 1.6117e+02, 1.9048e+00, 
+ 2DIAGNOSTIC,    30, -3.818658182142e-01, 1.060371386759e-06, 1.6329e+02, 2.1125e+00, 
+ 2DIAGNOSTIC,    31, -3.818658182142e-01, 1.026164589975e-06, 1.6482e+02, 1.5297e+00, 
+ 2DIAGNOSTIC,    32, -3.818658182142e-01, 9.940957947860e-07, 1.6635e+02, 1.5349e+00, 
+ 2DIAGNOSTIC,    33, -3.818658182142e-01, 9.639706306380e-07, 1.6788e+02, 1.5242e+00, 
+ 2DIAGNOSTIC,    34, -3.818658182142e-01, 9.356175948404e-07, 1.6948e+02, 1.6001e+00, 
+ 2DIAGNOSTIC,    35, -3.818658182142e-01, 9.088847857247e-07, 1.7107e+02, 1.5974e+00, 
+ 2DIAGNOSTIC,    36, -3.818658182142e-01, 8.836371800797e-07, 1.7269e+02, 1.6141e+00, 
+ 2DIAGNOSTIC,    37, -3.818658182142e-01, 8.597543522670e-07, 1.7431e+02, 1.6209e+00, 
+ 2DIAGNOSTIC,    38, -3.818658182142e-01, 8.371285534353e-07, 1.7593e+02, 1.6245e+00, 
+ 2DIAGNOSTIC,    39, -3.818658182142e-01, 8.156630861636e-07, 1.7756e+02, 1.6271e+00, 
+ 2DIAGNOSTIC,    40, -3.818658182142e-01, 7.952709231013e-07, 1.7920e+02, 1.6364e+00, 
+ 2DIAGNOSTIC,    41, -3.818658182142e-01, 7.758735275920e-07, 1.8084e+02, 1.6485e+00, 
+ 2DIAGNOSTIC,    42, -3.818658182142e-01, 7.573998428365e-07, 1.8244e+02, 1.5923e+00, 
+ 2DIAGNOSTIC,    43, -3.818658182142e-01, 7.397854222234e-07, 1.8397e+02, 1.5379e+00, 
+ 2DIAGNOSTIC,    44, -3.818658182142e-01, 7.229716779827e-07, 1.8551e+02, 1.5381e+00, 
+ 2DIAGNOSTIC,    45, -3.818658182142e-01, 7.069052303590e-07, 1.8703e+02, 1.5154e+00, 
+ 2DIAGNOSTIC,    46, -3.818658182142e-01, 6.915373413768e-07, 1.8856e+02, 1.5292e+00, 
+ 2DIAGNOSTIC,    47, -3.818658182142e-01, 6.768234211141e-07, 1.9007e+02, 1.5123e+00, 
+ 2DIAGNOSTIC,    48, -3.818658182142e-01, 6.627225955409e-07, 1.9158e+02, 1.5141e+00, 
+ 2DIAGNOSTIC,    49, -3.818658182142e-01, 6.491973273681e-07, 1.9310e+02, 1.5163e+00, 
+ 2DIAGNOSTIC,    50, -3.818658182142e-01, 6.362130823764e-07, 1.9462e+02, 1.5159e+00, 
+ 2DIAGNOSTIC,    51, -3.818658182142e-01, 6.237380349230e-07, 1.9612e+02, 1.5031e+00, 
+ 2DIAGNOSTIC,    52, -3.818658182142e-01, 6.117428075977e-07, 1.9763e+02, 1.5144e+00, 
+ 2DIAGNOSTIC,    53, -3.818658182142e-01, 6.002002401820e-07, 1.9915e+02, 1.5152e+00, 
+ 2DIAGNOSTIC,    54, -3.818658182142e-01, 5.890851843653e-07, 2.0068e+02, 1.5328e+00, 
+ 2DIAGNOSTIC,    55, -3.818658182142e-01, 5.783743208254e-07, 2.0221e+02, 1.5335e+00, 
+ 2DIAGNOSTIC,    56, -3.818658182142e-01, 5.680459959842e-07, 2.0375e+02, 1.5365e+00, 
+ 2DIAGNOSTIC,    57, -3.818658182142e-01, 5.580800758187e-07, 2.0530e+02, 1.5473e+00, 
+ 2DIAGNOSTIC,    58, -3.818658182142e-01, 5.484578148723e-07, 2.0684e+02, 1.5379e+00, 
+ 2DIAGNOSTIC,    59, -3.818658182142e-01, 5.391617386233e-07, 2.0838e+02, 1.5390e+00, 
+ 2DIAGNOSTIC,    60, -3.818658182142e-01, 5.301755375171e-07, 2.0992e+02, 1.5465e+00, 
+ 2DIAGNOSTIC,    61, -3.818658182142e-01, 5.214839715016e-07, 2.1146e+02, 1.5417e+00, 
+ 2DIAGNOSTIC,    62, -3.818658182142e-01, 5.130727837865e-07, 2.1301e+02, 1.5443e+00, 
+ 2DIAGNOSTIC,    63, -3.818658182142e-01, 5.049286227674e-07, 2.1455e+02, 1.5412e+00, 
+ 2DIAGNOSTIC,    64, -3.818658182142e-01, 4.970389713491e-07, 2.1607e+02, 1.5244e+00, 
+ 2DIAGNOSTIC,    65, -3.818658182142e-01, 4.893920827372e-07, 2.1763e+02, 1.5546e+00, 
+ 2DIAGNOSTIC,    66, -3.818658182142e-01, 4.819769220538e-07, 2.1915e+02, 1.5242e+00, 
+ 2DIAGNOSTIC,    67, -3.818658182142e-01, 4.747831132482e-07, 2.2068e+02, 1.5318e+00, 
+ 2DIAGNOSTIC,    68, -3.818658182142e-01, 4.678008906338e-07, 2.2220e+02, 1.5201e+00, 
+ 2DIAGNOSTIC,    69, -3.818658182142e-01, 4.610210546600e-07, 2.2373e+02, 1.5268e+00, 
+ 2DIAGNOSTIC,    70, -3.818658182142e-01, 4.544349314645e-07, 2.2527e+02, 1.5393e+00, 
+ 2DIAGNOSTIC,    71, -3.818658182142e-01, 4.480343358659e-07, 2.2681e+02, 1.5413e+00, 
+ 2DIAGNOSTIC,    72, -3.818658182142e-01, 4.418115374244e-07, 2.2834e+02, 1.5324e+00, 
+ 2DIAGNOSTIC,    73, -3.818658182142e-01, 4.357592292992e-07, 2.2988e+02, 1.5344e+00, 
+ 2DIAGNOSTIC,    74, -3.818658182142e-01, 4.298704996027e-07, 2.3142e+02, 1.5367e+00, 
+ 2DIAGNOSTIC,    75, -3.818658182142e-01, 4.241388051104e-07, 2.3293e+02, 1.5170e+00, 
+ 2DIAGNOSTIC,    76, -3.818658182142e-01, 4.185579469650e-07, 2.3445e+02, 1.5226e+00, 
+ 2DIAGNOSTIC,    77, -3.818658182142e-01, 4.131220483344e-07, 2.3600e+02, 1.5416e+00, 
+ 2DIAGNOSTIC,    78, -3.818658182142e-01, 4.078255337742e-07, 2.3752e+02, 1.5223e+00, 
+ 2DIAGNOSTIC,    79, -3.818658182142e-01, 4.026631101432e-07, 2.3906e+02, 1.5459e+00, 
+ 2DIAGNOSTIC,    80, -3.818658182142e-01, 3.976297489588e-07, 2.4061e+02, 1.5452e+00, 
+ 2DIAGNOSTIC,    81, -3.818658182142e-01, 3.927206700602e-07, 2.4214e+02, 1.5319e+00, 
+ 2DIAGNOSTIC,    82, -3.818658182142e-01, 3.879313264666e-07, 2.4367e+02, 1.5284e+00, 
+ 2DIAGNOSTIC,    83, -3.818658182142e-01, 3.832573903448e-07, 2.4520e+02, 1.5348e+00, 
+ 2DIAGNOSTIC,    84, -3.818658182142e-01, 3.786947399380e-07, 2.4673e+02, 1.5285e+00, 
+ 2DIAGNOSTIC,    85, -3.818658182142e-01, 3.742394474628e-07, 2.4826e+02, 1.5268e+00, 
+ 2DIAGNOSTIC,    86, -3.818658182142e-01, 3.698877678229e-07, 2.4977e+02, 1.5127e+00, 
+ 2DIAGNOSTIC,    87, -3.818658182142e-01, 3.656361281194e-07, 2.5130e+02, 1.5293e+00, 
+ 2DIAGNOSTIC,    88, -3.818658182142e-01, 3.614811178547e-07, 2.5283e+02, 1.5329e+00, 
+ 2DIAGNOSTIC,    89, -3.818658182142e-01, 3.574194798114e-07, 2.5433e+02, 1.4983e+00, 
+ 2DIAGNOSTIC,    90, -3.818658182142e-01, 3.534481015435e-07, 2.5583e+02, 1.4952e+00, 
+ 2DIAGNOSTIC,    91, -3.818658182142e-01, 3.495640074156e-07, 2.5736e+02, 1.5296e+00, 
+ 2DIAGNOSTIC,    92, -3.818658182142e-01, 3.457643511749e-07, 2.5887e+02, 1.5125e+00, 
+ 2DIAGNOSTIC,    93, -3.818658182142e-01, 3.420464089778e-07, 2.6041e+02, 1.5371e+00, 
+ 2DIAGNOSTIC,    94, -3.818658182142e-01, 3.384075729050e-07, 2.6196e+02, 1.5558e+00, 
+ 2DIAGNOSTIC,    95, -3.818658182142e-01, 3.348453448335e-07, 2.6351e+02, 1.5425e+00, 
+ 2DIAGNOSTIC,    96, -3.818658182142e-01, 3.313573307302e-07, 2.6504e+02, 1.5381e+00, 
+ 2DIAGNOSTIC,    97, -3.818658182142e-01, 3.279412352994e-07, 2.6657e+02, 1.5269e+00, 
+ 2DIAGNOSTIC,    98, -3.818658182142e-01, 3.245948569201e-07, 2.6810e+02, 1.5333e+00, 
+ 2DIAGNOSTIC,    99, -3.818658182142e-01, 3.213160829282e-07, 2.6963e+02, 1.5298e+00, 
+ 2DIAGNOSTIC,   100, -3.818658182142e-01, 3.181028851700e-07, 2.7115e+02, 1.5142e+00, 
+  Elapsed time (stage 0): 2.7204e+02
+
+
+Stage 1
+  iterations = 1000x500x250x100
+  convergence threshold = 1.0000e-08
+  convergence window size = 10
+  number of levels = 4
+  using the Mattes MI metric (number of bins = 32, weight = 1.0000e+00, use gradient filter = 0)
+  preprocessing:  winsorizing the image intensities
+  preprocessing:  histogram matching the images
+  Shrink factors (level 1 out of 4): [8, 8, 8]
+  Shrink factors (level 2 out of 4): [4, 4, 4]
+  Shrink factors (level 3 out of 4): [2, 2, 2]
+  Shrink factors (level 4 out of 4): [1, 1, 1]
+  smoothing sigmas per level: [4, 2, 1, 0]
+  regular sampling (percentage = 2.5000e-01)
+
+*** Running AffineTransform registration ***
+
+DIAGNOSTIC,Iteration,metricValue,convergenceValue,ITERATION_TIME_INDEX,SINCE_LAST
+ 2DIAGNOSTIC,     1, -6.697906241191e-01, 1.797693134862e+308, 4.4917e-01, 4.4917e-01, 
+ 2DIAGNOSTIC,     2, -6.714225322018e-01, 1.797693134862e+308, 4.5529e-01, 6.1228e-03, 
+ 2DIAGNOSTIC,     3, -6.736763774222e-01, 1.797693134862e+308, 4.6113e-01, 5.8310e-03, 
+ 2DIAGNOSTIC,     4, -6.763414517061e-01, 1.797693134862e+308, 4.6722e-01, 6.0909e-03, 
+ 2DIAGNOSTIC,     5, -6.794109728468e-01, 1.797693134862e+308, 4.7281e-01, 5.5928e-03, 
+ 2DIAGNOSTIC,     6, -6.825829560876e-01, 1.797693134862e+308, 4.7857e-01, 5.7559e-03, 
+ 2DIAGNOSTIC,     7, -6.844961411976e-01, 1.797693134862e+308, 4.8501e-01, 6.4452e-03, 
+ 2DIAGNOSTIC,     8, -6.873118971596e-01, 1.797693134862e+308, 4.9159e-01, 6.5789e-03, 
+ 2DIAGNOSTIC,     9, -6.906023357193e-01, 1.797693134862e+308, 4.9807e-01, 6.4850e-03, 
+ 2DIAGNOSTIC,    10, -6.926458540156e-01, 2.237172837096e-03, 5.0438e-01, 6.3100e-03, 
+ 2DIAGNOSTIC,    11, -6.931016460870e-01, 1.983228423550e-03, 5.1067e-01, 6.2859e-03, 
+ 2DIAGNOSTIC,    12, -6.935957810252e-01, 1.669528991058e-03, 5.1891e-01, 8.2438e-03, 
+ 2DIAGNOSTIC,    13, -6.937127676103e-01, 1.329294035962e-03, 5.2436e-01, 5.4410e-03, 
+ 2DIAGNOSTIC,    14, -6.938734295020e-01, 9.992859216535e-04, 5.3089e-01, 6.5310e-03, 
+ 2DIAGNOSTIC,    15, -6.940177361142e-01, 7.099642943712e-04, 5.3719e-01, 6.3040e-03, 
+ 2DIAGNOSTIC,    16, -6.939170105482e-01, 4.723580773023e-04, 5.4352e-01, 6.3260e-03, 
+ 2DIAGNOSTIC,    17, -6.939514827652e-01, 2.669392373648e-04, 5.4989e-01, 6.3689e-03, 
+ 2DIAGNOSTIC,    18, -6.940035583103e-01, 1.245408048975e-04, 5.5530e-01, 5.4109e-03, 
+ 2DIAGNOSTIC,    19, -6.942230543232e-01, 6.122149331084e-05, 5.6152e-01, 6.2191e-03, 
+ 2DIAGNOSTIC,    20, -6.944992307761e-01, 4.645821173769e-05, 5.6724e-01, 5.7280e-03, 
+ 2DIAGNOSTIC,    21, -6.945789547183e-01, 3.921118828570e-05, 5.7301e-01, 5.7659e-03, 
+ 2DIAGNOSTIC,    22, -6.949128786378e-01, 4.475643268477e-05, 5.7852e-01, 5.5079e-03, 
+ 2DIAGNOSTIC,    23, -6.952917139262e-01, 5.447785593878e-05, 5.8541e-01, 6.8929e-03, 
+ 2DIAGNOSTIC,    24, -6.957669283849e-01, 6.907797173065e-05, 5.9177e-01, 6.3579e-03, 
+ 2DIAGNOSTIC,    25, -6.964905060834e-01, 9.037109054937e-05, 6.0216e-01, 1.0392e-02, 
+ 2DIAGNOSTIC,    26, -6.969166964208e-01, 1.066464622304e-04, 6.0977e-01, 7.6101e-03, 
+ 2DIAGNOSTIC,    27, -6.970515341655e-01, 1.144015025538e-04, 6.1633e-01, 6.5639e-03, 
+ 2DIAGNOSTIC,    28, -6.970816852701e-01, 1.121613804717e-04, 6.2316e-01, 6.8300e-03, 
+ 2DIAGNOSTIC,    29, -6.970528646060e-01, 1.022200379570e-04, 6.2957e-01, 6.4101e-03, 
+ 2DIAGNOSTIC,    30, -6.970196158233e-01, 8.666566322670e-05, 6.3510e-01, 5.5292e-03, 
+ 2DIAGNOSTIC,    31, -6.969919376350e-01, 6.462811109947e-05, 6.4048e-01, 5.3780e-03, 
+ 2DIAGNOSTIC,    32, -6.970283270956e-01, 4.275115199303e-05, 6.4667e-01, 6.1901e-03, 
+ 2DIAGNOSTIC,    33, -6.970177603438e-01, 2.283391004899e-05, 6.5211e-01, 5.4369e-03, 
+ 2DIAGNOSTIC,    34, -6.971273065444e-01, 8.943441034671e-06, 6.5777e-01, 5.6651e-03, 
+ 2DIAGNOSTIC,    35, -6.972321871166e-01, 4.684221770909e-06, 6.6448e-01, 6.7120e-03, 
+ 2DIAGNOSTIC,    36, -6.973240199241e-01, 6.158663360675e-06, 6.7001e-01, 5.5201e-03, 
+ 2DIAGNOSTIC,    37, -6.973779212477e-01, 9.127716703760e-06, 6.7623e-01, 6.2261e-03, 
+ 2DIAGNOSTIC,    38, -6.977444537005e-01, 1.545062580230e-05, 6.8254e-01, 6.3081e-03, 
+ 2DIAGNOSTIC,    39, -6.978013256147e-01, 2.025190978968e-05, 6.8802e-01, 5.4841e-03, 
+ 2DIAGNOSTIC,    40, -6.980292296162e-01, 2.497928849710e-05, 6.9500e-01, 6.9790e-03, 
+ 2DIAGNOSTIC,    41, -6.992044291236e-01, 3.864274675455e-05, 7.0161e-01, 6.6040e-03, 
+ 2DIAGNOSTIC,    42, -6.994357863267e-01, 5.036539227608e-05, 7.0892e-01, 7.3099e-03, 
+ 2DIAGNOSTIC,    43, -6.998436612453e-01, 6.063105961548e-05, 7.1692e-01, 7.9989e-03, 
+ 2DIAGNOSTIC,    44, -6.998557285322e-01, 6.589264507236e-05, 7.3804e-01, 2.1120e-02, 
+ 2DIAGNOSTIC,    45, -6.998557179825e-01, 6.567814730108e-05, 7.4422e-01, 6.1870e-03, 
+ 2DIAGNOSTIC,    46, -6.998557599536e-01, 5.997946931980e-05, 7.4977e-01, 5.5461e-03, 
+ 2DIAGNOSTIC,    47, -6.998558309224e-01, 4.918479454336e-05, 7.5508e-01, 5.3089e-03, 
+ 2DIAGNOSTIC,    48, -6.998559509189e-01, 3.743749157738e-05, 7.6067e-01, 5.5881e-03, 
+ 2DIAGNOSTIC,    49, -6.998561538006e-01, 2.320986104022e-05, 7.6628e-01, 5.6131e-03, 
+ 2DIAGNOSTIC,    50, -6.998564968087e-01, 9.066062997203e-06, 7.7180e-01, 5.5170e-03, 
+ 2DIAGNOSTIC,    51, -6.998570765832e-01, 4.106888621937e-06, 7.7723e-01, 5.4319e-03, 
+ 2DIAGNOSTIC,    52, -6.998580555639e-01, 7.455992661887e-07, 7.8328e-01, 6.0570e-03, 
+ 2DIAGNOSTIC,    53, -6.998597075243e-01, 6.616142783182e-07, 7.8926e-01, 5.9719e-03, 
+ 2DIAGNOSTIC,    54, -6.998624979037e-01, 6.878022579468e-07, 7.9542e-01, 6.1619e-03, 
+ 2DIAGNOSTIC,    55, -6.998672062171e-01, 7.386100008694e-07, 8.0150e-01, 6.0790e-03, 
+ 2DIAGNOSTIC,    56, -6.998751216457e-01, 8.301872869119e-07, 8.0716e-01, 5.6648e-03, 
+ 2DIAGNOSTIC,    57, -6.998883694966e-01, 9.883732087074e-07, 8.1290e-01, 5.7411e-03, 
+ 2DIAGNOSTIC,    58, -6.999103895918e-01, 1.254639287893e-06, 8.1936e-01, 6.4569e-03, 
+ 2DIAGNOSTIC,    59, -6.999243074093e-01, 1.539486126433e-06, 8.2496e-01, 5.6021e-03, 
+ 2DIAGNOSTIC,    60, -6.998282735145e-01, 1.066377480909e-06, 8.3029e-01, 5.3241e-03, 
+ 2DIAGNOSTIC,    61, -6.998666940240e-01, 8.400834525038e-07, 8.3577e-01, 5.4820e-03, 
+ 2DIAGNOSTIC,    62, -6.999280550794e-01, 9.869357147918e-07, 8.4106e-01, 5.2891e-03, 
+ 2DIAGNOSTIC,    63, -6.999222662197e-01, 1.036050645841e-06, 8.4639e-01, 5.3298e-03, 
+ 2DIAGNOSTIC,    64, -7.000594089827e-01, 1.938126309591e-06, 8.5299e-01, 6.6020e-03, 
+ 2DIAGNOSTIC,    65, -7.000949904918e-01, 2.919220181394e-06, 8.5896e-01, 5.9690e-03, 
+ 2DIAGNOSTIC,    66, -7.000557050783e-01, 3.443177183076e-06, 8.6556e-01, 6.6042e-03, 
+ 2DIAGNOSTIC,    67, -7.000662004151e-01, 3.814942559258e-06, 8.7274e-01, 7.1738e-03, 
+ 2DIAGNOSTIC,    68, -7.000626075375e-01, 3.954246412065e-06, 8.7836e-01, 5.6219e-03, 
+ 2DIAGNOSTIC,    69, -7.000485697014e-01, 3.761224521637e-06, 8.8477e-01, 6.4142e-03, 
+ 2DIAGNOSTIC,    70, -7.000609111069e-01, 2.762025607110e-06, 8.9000e-01, 5.2271e-03, 
+ 2DIAGNOSTIC,    71, -7.000112697783e-01, 1.506181090859e-06, 8.9545e-01, 5.4481e-03, 
+ 2DIAGNOSTIC,    72, -7.000240723339e-01, 6.256942321325e-07, 9.0237e-01, 6.9201e-03, 
+DIAGNOSTIC,Iteration,metricValue,convergenceValue,ITERATION_TIME_INDEX,SINCE_LAST
+ 2DIAGNOSTIC,     1, -5.226020379135e-01, 1.797693134862e+308, 1.4127e+00, 5.1036e-01, 
+ 2DIAGNOSTIC,     2, -5.233739752191e-01, 1.797693134862e+308, 1.4706e+00, 5.7862e-02, 
+ 2DIAGNOSTIC,     3, -5.245448185984e-01, 1.797693134862e+308, 1.5213e+00, 5.0732e-02, 
+ 2DIAGNOSTIC,     4, -5.259507080584e-01, 1.797693134862e+308, 1.5731e+00, 5.1758e-02, 
+ 2DIAGNOSTIC,     5, -5.276298285240e-01, 1.797693134862e+308, 1.6289e+00, 5.5856e-02, 
+ 2DIAGNOSTIC,     6, -5.292434868725e-01, 1.797693134862e+308, 1.6809e+00, 5.1933e-02, 
+ 2DIAGNOSTIC,     7, -5.337358637734e-01, 1.797693134862e+308, 1.7480e+00, 6.7107e-02, 
+ 2DIAGNOSTIC,     8, -5.341290570117e-01, 1.797693134862e+308, 1.8008e+00, 5.2864e-02, 
+ 2DIAGNOSTIC,     9, -5.341687498901e-01, 1.797693134862e+308, 1.8747e+00, 7.3855e-02, 
+ 2DIAGNOSTIC,    10, -5.341840478547e-01, 1.703349554115e-03, 1.9306e+00, 5.5930e-02, 
+ 2DIAGNOSTIC,    11, -5.342419857707e-01, 1.410110597966e-03, 1.9811e+00, 5.0466e-02, 
+ 2DIAGNOSTIC,    12, -5.342992254170e-01, 1.073847293892e-03, 2.0437e+00, 6.2601e-02, 
+ 2DIAGNOSTIC,    13, -5.343244750647e-01, 7.416348087268e-04, 2.0929e+00, 4.9250e-02, 
+ 2DIAGNOSTIC,    14, -5.344332368945e-01, 4.497377455052e-04, 2.1420e+00, 4.9046e-02, 
+ 2DIAGNOSTIC,    15, -5.346125059733e-01, 2.229596947563e-04, 2.1871e+00, 4.5070e-02, 
+ 2DIAGNOSTIC,    16, -5.353389106805e-01, 7.846698673815e-05, 2.2494e+00, 6.2391e-02, 
+ 2DIAGNOSTIC,    17, -5.354573713202e-01, 8.825013188485e-05, 2.3405e+00, 9.1069e-02, 
+ 2DIAGNOSTIC,    18, -5.354896459946e-01, 1.018159205699e-04, 2.3910e+00, 5.0480e-02, 
+ 2DIAGNOSTIC,    19, -5.356462339704e-01, 1.105043791690e-04, 2.4392e+00, 4.8156e-02, 
+ 2DIAGNOSTIC,    20, -5.358357425994e-01, 1.134412847170e-04, 2.4886e+00, 4.9459e-02, 
+ 2DIAGNOSTIC,    21, -5.359411161932e-01, 1.094283221258e-04, 2.5369e+00, 4.8243e-02, 
+ 2DIAGNOSTIC,    22, -5.360089283157e-01, 9.875694114648e-05, 2.5849e+00, 4.8042e-02, 
+ 2DIAGNOSTIC,    23, -5.361948190053e-01, 8.508911073354e-05, 2.6383e+00, 5.3383e-02, 
+ 2DIAGNOSTIC,    24, -5.364691026991e-01, 7.322288101261e-05, 2.7086e+00, 7.0307e-02, 
+ 2DIAGNOSTIC,    25, -5.364523921953e-01, 5.844436563032e-05, 2.7658e+00, 5.7207e-02, 
+ 2DIAGNOSTIC,    26, -5.364704252515e-01, 5.477798435945e-05, 2.8153e+00, 4.9548e-02, 
+ 2DIAGNOSTIC,    27, -5.364882121568e-01, 4.914266674079e-05, 2.8605e+00, 4.5131e-02, 
+ 2DIAGNOSTIC,    28, -5.365665010460e-01, 4.139023478543e-05, 2.9184e+00, 5.7957e-02, 
+ 2DIAGNOSTIC,    29, -5.365876090584e-01, 3.345608507734e-05, 2.9816e+00, 6.3166e-02, 
+ 2DIAGNOSTIC,    30, -5.365647979305e-01, 2.596746353890e-05, 3.0302e+00, 4.8558e-02, 
+ 2DIAGNOSTIC,    31, -5.365666989231e-01, 1.856560182406e-05, 3.0806e+00, 5.0460e-02, 
+ 2DIAGNOSTIC,    32, -5.366200433828e-01, 1.193515308132e-05, 3.1350e+00, 5.4381e-02, 
+ 2DIAGNOSTIC,    33, -5.371083150234e-01, 1.537021754362e-05, 3.1890e+00, 5.3966e-02, 
+ 2DIAGNOSTIC,    34, -5.372769830501e-01, 2.396926197866e-05, 3.2744e+00, 8.5443e-02, 
+ 2DIAGNOSTIC,    35, -5.374701679388e-01, 3.261818543333e-05, 3.3330e+00, 5.8562e-02, 
+ 2DIAGNOSTIC,    36, -5.373988766569e-01, 3.705731700731e-05, 3.3924e+00, 5.9455e-02, 
+ 2DIAGNOSTIC,    37, -5.373980069768e-01, 3.808554260816e-05, 3.4465e+00, 5.4075e-02, 
+ 2DIAGNOSTIC,    38, -5.373890188518e-01, 3.637875721944e-05, 3.5016e+00, 5.5078e-02, 
+ 2DIAGNOSTIC,    39, -5.374346081788e-01, 3.221807915539e-05, 3.5527e+00, 5.1118e-02, 
+ 2DIAGNOSTIC,    40, -5.375781852974e-01, 2.692473648424e-05, 3.6045e+00, 5.1816e-02, 
+ 2DIAGNOSTIC,    41, -5.378583903058e-01, 2.310725847047e-05, 3.6993e+00, 9.4801e-02, 
+ 2DIAGNOSTIC,    42, -5.378938666801e-01, 1.828768824094e-05, 3.7835e+00, 8.4215e-02, 
+ 2DIAGNOSTIC,    43, -5.378965106025e-01, 1.810116319594e-05, 3.8531e+00, 6.9560e-02, 
+ 2DIAGNOSTIC,    44, -5.378903684015e-01, 1.819409327249e-05, 3.9119e+00, 5.8798e-02, 
+ 2DIAGNOSTIC,    45, -5.378917456546e-01, 1.889884888807e-05, 3.9707e+00, 5.8795e-02, 
+ 2DIAGNOSTIC,    46, -5.378858395764e-01, 1.688529917063e-05, 4.0216e+00, 5.0926e-02, 
+ 2DIAGNOSTIC,    47, -5.378842656494e-01, 1.339833633590e-05, 4.0852e+00, 6.3615e-02, 
+ 2DIAGNOSTIC,    48, -5.378819136066e-01, 8.767533449344e-06, 4.1390e+00, 5.3758e-02, 
+ 2DIAGNOSTIC,    49, -5.378771785780e-01, 3.992194291157e-06, 4.1959e+00, 5.6899e-02, 
+ 2DIAGNOSTIC,    50, -5.378806227650e-01, 5.713237232821e-07, 4.2488e+00, 5.2970e-02, 
+ 2DIAGNOSTIC,    51, -5.378787790074e-01, 1.783271389132e-07, 4.2999e+00, 5.1051e-02, 
+ 2DIAGNOSTIC,    52, -5.378775886312e-01, 1.931583892729e-07, 4.3579e+00, 5.8043e-02, 
+ 2DIAGNOSTIC,    53, -5.378798614450e-01, 2.994299659678e-07, 4.4148e+00, 5.6826e-02, 
+ 2DIAGNOSTIC,    54, -5.378782679447e-01, 3.531701698485e-07, 4.4913e+00, 7.6571e-02, 
+ 2DIAGNOSTIC,    55, -5.378762532252e-01, 4.229981732280e-07, 4.5478e+00, 5.6507e-02, 
+ 2DIAGNOSTIC,    56, -5.378704769795e-01, 3.951245324957e-07, 4.5973e+00, 4.9473e-02, 
+ 2DIAGNOSTIC,    57, -5.378674698942e-01, 3.443050683831e-07, 4.6543e+00, 5.6997e-02, 
+ 2DIAGNOSTIC,    58, -5.378661392764e-01, 2.832804771244e-07, 4.7130e+00, 5.8650e-02, 
+ 2DIAGNOSTIC,    59, -5.378617931591e-01, 1.665182318492e-07, 4.7790e+00, 6.6039e-02, 
+ 2DIAGNOSTIC,    60, -5.378594791173e-01, 1.014679162567e-07, 4.8509e+00, 7.1853e-02, 
+ 2DIAGNOSTIC,    61, -5.378563998730e-01, 3.845034228511e-08, 4.9165e+00, 6.5642e-02, 
+DIAGNOSTIC,Iteration,metricValue,convergenceValue,ITERATION_TIME_INDEX,SINCE_LAST
+ 2DIAGNOSTIC,     1, -4.637731305452e-01, 1.797693134862e+308, 5.8860e+00, 9.6955e-01, 
+ 2DIAGNOSTIC,     2, -4.640109896336e-01, 1.797693134862e+308, 6.2175e+00, 3.3147e-01, 
+ 2DIAGNOSTIC,     3, -4.642750411579e-01, 1.797693134862e+308, 6.5420e+00, 3.2451e-01, 
+ 2DIAGNOSTIC,     4, -4.645052780525e-01, 1.797693134862e+308, 6.8640e+00, 3.2202e-01, 
+ 2DIAGNOSTIC,     5, -4.647248055675e-01, 1.797693134862e+308, 7.1897e+00, 3.2565e-01, 
+ 2DIAGNOSTIC,     6, -4.648340304490e-01, 1.797693134862e+308, 7.5847e+00, 3.9503e-01, 
+ 2DIAGNOSTIC,     7, -4.648657439859e-01, 1.797693134862e+308, 8.0783e+00, 4.9357e-01, 
+ 2DIAGNOSTIC,     8, -4.648709442294e-01, 1.797693134862e+308, 8.4611e+00, 3.8286e-01, 
+ 2DIAGNOSTIC,     9, -4.648789886979e-01, 1.797693134862e+308, 8.7888e+00, 3.2766e-01, 
+ 2DIAGNOSTIC,    10, -4.648849142303e-01, 1.545842667164e-04, 9.1264e+00, 3.3758e-01, 
+ 2DIAGNOSTIC,    11, -4.649052033777e-01, 1.009298216421e-04, 9.4478e+00, 3.2146e-01, 
+ 2DIAGNOSTIC,    12, -4.649686195450e-01, 6.265981591981e-05, 9.8276e+00, 3.7981e-01, 
+ 2DIAGNOSTIC,    13, -4.650432367674e-01, 4.061502930248e-05, 1.0155e+01, 3.2760e-01, 
+ 2DIAGNOSTIC,    14, -4.650830816723e-01, 2.980630062466e-05, 1.0705e+01, 5.4950e-01, 
+ 2DIAGNOSTIC,    15, -4.650970099074e-01, 2.736009895711e-05, 1.1085e+01, 3.7995e-01, 
+ 2DIAGNOSTIC,    16, -4.651139450755e-01, 2.772683329186e-05, 1.1413e+01, 3.2855e-01, 
+ 2DIAGNOSTIC,    17, -4.651937160850e-01, 2.965321013097e-05, 1.1741e+01, 3.2737e-01, 
+ 2DIAGNOSTIC,    18, -4.652208281959e-01, 2.978367680771e-05, 1.2120e+01, 3.7933e-01, 
+ 2DIAGNOSTIC,    19, -4.652274593480e-01, 2.779490930430e-05, 1.2455e+01, 3.3457e-01, 
+ 2DIAGNOSTIC,    20, -4.652328167213e-01, 2.399609705227e-05, 1.2835e+01, 3.8074e-01, 
+ 2DIAGNOSTIC,    21, -4.652362987731e-01, 1.914870115592e-05, 1.3225e+01, 3.8970e-01, 
+ 2DIAGNOSTIC,    22, -4.652369964581e-01, 1.479796787442e-05, 1.3552e+01, 3.2723e-01, 
+ 2DIAGNOSTIC,    23, -4.652376478902e-01, 1.154096719857e-05, 1.3882e+01, 3.3026e-01, 
+ 2DIAGNOSTIC,    24, -4.652444756576e-01, 8.815744972232e-06, 1.4533e+01, 6.5012e-01, 
+ 2DIAGNOSTIC,    25, -4.652433065957e-01, 5.932453904373e-06, 1.4974e+01, 4.4156e-01, 
+ 2DIAGNOSTIC,    26, -4.652430183918e-01, 3.181793512712e-06, 1.5310e+01, 3.3603e-01, 
+ 2DIAGNOSTIC,    27, -4.652352773114e-01, 2.069369180825e-06, 1.5694e+01, 3.8382e-01, 
+ 2DIAGNOSTIC,    28, -4.652347772030e-01, 1.535413534870e-06, 1.6035e+01, 3.4104e-01, 
+ 2DIAGNOSTIC,    29, -4.652344894569e-01, 1.128099492473e-06, 1.6424e+01, 3.8897e-01, 
+ 2DIAGNOSTIC,    30, -4.652345886577e-01, 8.519707813751e-07, 1.6982e+01, 5.5818e-01, 
+ 2DIAGNOSTIC,    31, -4.652342770690e-01, 6.783888178707e-07, 1.7638e+01, 6.5616e-01, 
+ 2DIAGNOSTIC,    32, -4.652342770955e-01, 5.654975436600e-07, 1.8898e+01, 1.2594e+00, 
+ 2DIAGNOSTIC,    33, -4.652342770955e-01, 5.089173663042e-07, 1.9267e+01, 3.6886e-01, 
+ 2DIAGNOSTIC,    34, -4.652342770955e-01, 6.199461352850e-07, 1.9689e+01, 4.2234e-01, 
+ 2DIAGNOSTIC,    35, -4.652342770955e-01, 7.326308093074e-07, 2.0218e+01, 5.2948e-01, 
+ 2DIAGNOSTIC,    36, -4.652342770955e-01, 8.546299239340e-07, 2.0590e+01, 3.7202e-01, 
+ 2DIAGNOSTIC,    37, -4.652342770955e-01, 8.451849722070e-07, 2.0958e+01, 3.6788e-01, 
+ 2DIAGNOSTIC,    38, -4.652342770955e-01, 8.296869127358e-07, 2.1333e+01, 3.7467e-01, 
+ 2DIAGNOSTIC,    39, -4.652342770955e-01, 8.111139320373e-07, 2.1703e+01, 3.7043e-01, 
+ 2DIAGNOSTIC,    40, -4.652342770955e-01, 7.955878276560e-07, 2.2072e+01, 3.6822e-01, 
+ 2DIAGNOSTIC,    41, -4.652342770955e-01, 7.761747736930e-07, 2.2438e+01, 3.6674e-01, 
+ 2DIAGNOSTIC,    42, -4.652342770955e-01, 7.576869116774e-07, 2.2811e+01, 3.7239e-01, 
+ 2DIAGNOSTIC,    43, -4.652342770955e-01, 7.400592915430e-07, 2.3180e+01, 3.6954e-01, 
+ 2DIAGNOSTIC,    44, -4.652342770955e-01, 7.232332376560e-07, 2.3618e+01, 4.3806e-01, 
+ 2DIAGNOSTIC,    45, -4.652342770955e-01, 7.071552920075e-07, 2.4044e+01, 4.2548e-01, 
+ 2DIAGNOSTIC,    46, -4.652342770955e-01, 6.917766468655e-07, 2.4410e+01, 3.6616e-01, 
+ 2DIAGNOSTIC,    47, -4.652342770955e-01, 6.770526497814e-07, 2.4781e+01, 3.7107e-01, 
+ 2DIAGNOSTIC,    48, -4.652342770955e-01, 6.629423707598e-07, 2.5198e+01, 4.1648e-01, 
+ 2DIAGNOSTIC,    49, -4.652342770955e-01, 6.494082220726e-07, 2.5615e+01, 4.1770e-01, 
+ 2DIAGNOSTIC,    50, -4.652342770955e-01, 6.364156241376e-07, 2.5984e+01, 3.6875e-01, 
+ 2DIAGNOSTIC,    51, -4.652342770955e-01, 6.239327103620e-07, 2.6350e+01, 3.6638e-01, 
+ 2DIAGNOSTIC,    52, -4.652342770955e-01, 6.119300662265e-07, 2.6688e+01, 3.3748e-01, 
+ 2DIAGNOSTIC,    53, -4.652342770955e-01, 6.003804979282e-07, 2.7031e+01, 3.4349e-01, 
+ 2DIAGNOSTIC,    54, -4.652342770955e-01, 5.892588265909e-07, 2.7372e+01, 3.4056e-01, 
+ 2DIAGNOSTIC,    55, -4.652342770955e-01, 5.785417051818e-07, 2.7710e+01, 3.3854e-01, 
+ 2DIAGNOSTIC,    56, -4.652342770955e-01, 5.682074547507e-07, 2.8051e+01, 3.4093e-01, 
+ 2DIAGNOSTIC,    57, -4.652342770955e-01, 5.582359181716e-07, 2.8391e+01, 3.3943e-01, 
+ 2DIAGNOSTIC,    58, -4.652342770955e-01, 5.486083288486e-07, 2.8732e+01, 3.4083e-01, 
+ 2DIAGNOSTIC,    59, -4.652342770955e-01, 5.393071928761e-07, 2.9070e+01, 3.3841e-01, 
+ 2DIAGNOSTIC,    60, -4.652342770955e-01, 5.303161829777e-07, 2.9411e+01, 3.4090e-01, 
+ 2DIAGNOSTIC,    61, -4.652342770955e-01, 5.216200427531e-07, 2.9753e+01, 3.4162e-01, 
+ 2DIAGNOSTIC,    62, -4.652342770955e-01, 5.132045003964e-07, 3.0092e+01, 3.3975e-01, 
+ 2DIAGNOSTIC,    63, -4.652342770955e-01, 5.050561904980e-07, 3.0433e+01, 3.4104e-01, 
+ 2DIAGNOSTIC,    64, -4.652342770955e-01, 4.971625832025e-07, 3.0775e+01, 3.4185e-01, 
+ 2DIAGNOSTIC,    65, -4.652342770955e-01, 4.895119198808e-07, 3.1117e+01, 3.4232e-01, 
+ 2DIAGNOSTIC,    66, -4.652342770955e-01, 4.820931547890e-07, 3.1457e+01, 3.3964e-01, 
+ 2DIAGNOSTIC,    67, -4.652342770955e-01, 4.748959017871e-07, 3.1871e+01, 4.1364e-01, 
+ 2DIAGNOSTIC,    68, -4.652342770955e-01, 4.679103858089e-07, 3.2246e+01, 3.7552e-01, 
+ 2DIAGNOSTIC,    69, -4.652342770955e-01, 4.611273986387e-07, 3.2611e+01, 3.6508e-01, 
+ 2DIAGNOSTIC,    70, -4.652342770955e-01, 4.545382583428e-07, 3.3030e+01, 4.1836e-01, 
+ 2DIAGNOSTIC,    71, -4.652342770955e-01, 4.481347722525e-07, 3.3397e+01, 3.6762e-01, 
+ 2DIAGNOSTIC,    72, -4.652342770955e-01, 4.419092029355e-07, 3.3762e+01, 3.6466e-01, 
+ 2DIAGNOSTIC,    73, -4.652342770955e-01, 4.358542370353e-07, 3.4127e+01, 3.6474e-01, 
+ 2DIAGNOSTIC,    74, -4.652342770955e-01, 4.299629566135e-07, 3.4501e+01, 3.7395e-01, 
+ 2DIAGNOSTIC,    75, -4.652342770955e-01, 4.242288127385e-07, 3.4911e+01, 4.1034e-01, 
+ 2DIAGNOSTIC,    76, -4.652342770955e-01, 4.186456012776e-07, 3.5286e+01, 3.7476e-01, 
+ 2DIAGNOSTIC,    77, -4.652342770955e-01, 4.132074404323e-07, 3.5654e+01, 3.6781e-01, 
+ 2DIAGNOSTIC,    78, -4.652342770955e-01, 4.079087501160e-07, 3.6014e+01, 3.6036e-01, 
+ 2DIAGNOSTIC,    79, -4.652342770955e-01, 4.027442328369e-07, 3.6352e+01, 3.3809e-01, 
+ 2DIAGNOSTIC,    80, -4.652342770955e-01, 3.977088560269e-07, 3.6697e+01, 3.4458e-01, 
+ 2DIAGNOSTIC,    81, -4.652342770955e-01, 3.927978357021e-07, 3.7037e+01, 3.4074e-01, 
+ 2DIAGNOSTIC,    82, -4.652342770955e-01, 3.880066212995e-07, 3.7378e+01, 3.4098e-01, 
+ 2DIAGNOSTIC,    83, -4.652342770955e-01, 3.833308815752e-07, 3.7672e+01, 2.9377e-01, 
+ 2DIAGNOSTIC,    84, -4.652342770955e-01, 3.787664916051e-07, 3.8059e+01, 3.8647e-01, 
+ 2DIAGNOSTIC,    85, -4.652342770955e-01, 3.743095206080e-07, 3.8397e+01, 3.3852e-01, 
+ 2DIAGNOSTIC,    86, -4.652342770955e-01, 3.699562206635e-07, 3.8733e+01, 3.3631e-01, 
+ 2DIAGNOSTIC,    87, -4.652342770955e-01, 3.657030162203e-07, 3.9075e+01, 3.4128e-01, 
+ 2DIAGNOSTIC,    88, -4.652342770955e-01, 3.615464942500e-07, 3.9369e+01, 2.9444e-01, 
+ 2DIAGNOSTIC,    89, -4.652342770955e-01, 3.574833951810e-07, 3.9758e+01, 3.8839e-01, 
+ 2DIAGNOSTIC,    90, -4.652342770955e-01, 3.535106043156e-07, 4.0098e+01, 3.4008e-01, 
+ 2DIAGNOSTIC,    91, -4.652342770955e-01, 3.496251439142e-07, 4.0484e+01, 3.8638e-01, 
+ 2DIAGNOSTIC,    92, -4.652342770955e-01, 3.458241657050e-07, 4.0825e+01, 3.4099e-01, 
+ 2DIAGNOSTIC,    93, -4.652342770955e-01, 3.421049439619e-07, 4.1168e+01, 3.4263e-01, 
+ 2DIAGNOSTIC,    94, -4.652342770955e-01, 3.384648689653e-07, 4.1511e+01, 3.4310e-01, 
+ 2DIAGNOSTIC,    95, -4.652342770955e-01, 3.349014408970e-07, 4.1803e+01, 2.9248e-01, 
+ 2DIAGNOSTIC,    96, -4.652342770955e-01, 3.314122641040e-07, 4.2146e+01, 3.4271e-01, 
+ 2DIAGNOSTIC,    97, -4.652342770955e-01, 3.279950417639e-07, 4.2488e+01, 3.4193e-01, 
+ 2DIAGNOSTIC,    98, -4.652342770955e-01, 3.246475707933e-07, 4.2829e+01, 3.4128e-01, 
+ 2DIAGNOSTIC,    99, -4.652342770955e-01, 3.213677371560e-07, 4.3217e+01, 3.8785e-01, 
+ 2DIAGNOSTIC,   100, -4.652342770955e-01, 3.181535113885e-07, 4.3567e+01, 3.4976e-01, 
+ 2DIAGNOSTIC,   101, -4.652342770955e-01, 3.150029444059e-07, 4.3954e+01, 3.8770e-01, 
+ 2DIAGNOSTIC,   102, -4.652342770955e-01, 3.119141635775e-07, 4.4317e+01, 3.6254e-01, 
+ 2DIAGNOSTIC,   103, -4.652342770955e-01, 3.088853690186e-07, 4.4687e+01, 3.7018e-01, 
+ 2DIAGNOSTIC,   104, -4.652342770955e-01, 3.059148300597e-07, 4.5053e+01, 3.6558e-01, 
+ 2DIAGNOSTIC,   105, -4.652342770955e-01, 3.030008819960e-07, 4.5433e+01, 3.8070e-01, 
+ 2DIAGNOSTIC,   106, -4.652342770955e-01, 3.001419229369e-07, 4.5805e+01, 3.7128e-01, 
+ 2DIAGNOSTIC,   107, -4.652342770955e-01, 2.973364108868e-07, 4.6169e+01, 3.6467e-01, 
+ 2DIAGNOSTIC,   108, -4.652342770955e-01, 2.945828609692e-07, 4.6540e+01, 3.7037e-01, 
+ 2DIAGNOSTIC,   109, -4.652342770955e-01, 2.918798428196e-07, 4.6920e+01, 3.8001e-01, 
+ 2DIAGNOSTIC,   110, -4.652342770955e-01, 2.892259780736e-07, 4.7282e+01, 3.6211e-01, 
+ 2DIAGNOSTIC,   111, -4.652342770955e-01, 2.866199380613e-07, 4.7649e+01, 3.6702e-01, 
+ 2DIAGNOSTIC,   112, -4.652342770955e-01, 2.840604415699e-07, 4.8005e+01, 3.5592e-01, 
+ 2DIAGNOSTIC,   113, -4.652342770955e-01, 2.815462527370e-07, 4.8370e+01, 3.6494e-01, 
+ 2DIAGNOSTIC,   114, -4.652342770955e-01, 2.790761790879e-07, 4.8736e+01, 3.6625e-01, 
+ 2DIAGNOSTIC,   115, -4.652342770955e-01, 2.766490696145e-07, 4.9154e+01, 4.1805e-01, 
+ 2DIAGNOSTIC,   116, -4.652342770955e-01, 2.742638130077e-07, 4.9522e+01, 3.6748e-01, 
+ 2DIAGNOSTIC,   117, -4.652342770955e-01, 2.719193359698e-07, 4.9882e+01, 3.6054e-01, 
+ 2DIAGNOSTIC,   118, -4.652342770955e-01, 2.696146015752e-07, 5.0249e+01, 3.6653e-01, 
+ 2DIAGNOSTIC,   119, -4.652342770955e-01, 2.673486077676e-07, 5.0618e+01, 3.6905e-01, 
+ 2DIAGNOSTIC,   120, -4.652342770955e-01, 2.651203858915e-07, 5.0985e+01, 3.6712e-01, 
+ 2DIAGNOSTIC,   121, -4.652342770955e-01, 2.629289993280e-07, 5.1333e+01, 3.4775e-01, 
+ 2DIAGNOSTIC,   122, -4.652342770955e-01, 2.607735421559e-07, 5.1676e+01, 3.4341e-01, 
+ 2DIAGNOSTIC,   123, -4.652342770955e-01, 2.586531379321e-07, 5.2019e+01, 3.4268e-01, 
+ 2DIAGNOSTIC,   124, -4.652342770955e-01, 2.565669384794e-07, 5.2365e+01, 3.4593e-01, 
+ 2DIAGNOSTIC,   125, -4.652342770955e-01, 2.545141227772e-07, 5.2706e+01, 3.4134e-01, 
+ 2DIAGNOSTIC,   126, -4.652342770955e-01, 2.524938958644e-07, 5.3050e+01, 3.4363e-01, 
+ 2DIAGNOSTIC,   127, -4.652342770955e-01, 2.505054878185e-07, 5.3393e+01, 3.4312e-01, 
+ 2DIAGNOSTIC,   128, -4.652342770955e-01, 2.485481527953e-07, 5.3736e+01, 3.4341e-01, 
+ 2DIAGNOSTIC,   129, -4.652342770955e-01, 2.466211680655e-07, 5.4077e+01, 3.4122e-01, 
+ 2DIAGNOSTIC,   130, -4.652342770955e-01, 2.447238331461e-07, 5.4422e+01, 3.4469e-01, 
+ 2DIAGNOSTIC,   131, -4.652342770955e-01, 2.428554689415e-07, 5.4764e+01, 3.4203e-01, 
+ 2DIAGNOSTIC,   132, -4.652342770955e-01, 2.410154169488e-07, 5.5105e+01, 3.4089e-01, 
+ 2DIAGNOSTIC,   133, -4.652342770955e-01, 2.392030384601e-07, 5.5448e+01, 3.4341e-01, 
+ 2DIAGNOSTIC,   134, -4.652342770955e-01, 2.374177138411e-07, 5.5792e+01, 3.4381e-01, 
+ 2DIAGNOSTIC,   135, -4.652342770955e-01, 2.356588418191e-07, 5.6135e+01, 3.4243e-01, 
+ 2DIAGNOSTIC,   136, -4.652342770955e-01, 2.339258388081e-07, 5.6477e+01, 3.4295e-01, 
+ 2DIAGNOSTIC,   137, -4.652342770955e-01, 2.322181382602e-07, 5.6818e+01, 3.4057e-01, 
+ 2DIAGNOSTIC,   138, -4.652342770955e-01, 2.305351900550e-07, 5.7159e+01, 3.4079e-01, 
+ 2DIAGNOSTIC,   139, -4.652342770955e-01, 2.288764599069e-07, 5.7496e+01, 3.3706e-01, 
+ 2DIAGNOSTIC,   140, -4.652342770955e-01, 2.272414287930e-07, 5.7837e+01, 3.4063e-01, 
+ 2DIAGNOSTIC,   141, -4.652342770955e-01, 2.256295924125e-07, 5.8179e+01, 3.4268e-01, 
+ 2DIAGNOSTIC,   142, -4.652342770955e-01, 2.240404606835e-07, 5.8525e+01, 3.4552e-01, 
+ 2DIAGNOSTIC,   143, -4.652342770955e-01, 2.224735572249e-07, 5.8868e+01, 3.4310e-01, 
+ 2DIAGNOSTIC,   144, -4.652342770955e-01, 2.209284188934e-07, 5.9210e+01, 3.4184e-01, 
+ 2DIAGNOSTIC,   145, -4.652342770955e-01, 2.194045953209e-07, 5.9553e+01, 3.4355e-01, 
+ 2DIAGNOSTIC,   146, -4.652342770955e-01, 2.179016484836e-07, 5.9896e+01, 3.4278e-01, 
+ 2DIAGNOSTIC,   147, -4.652342770955e-01, 2.164191522779e-07, 6.0238e+01, 3.4248e-01, 
+ 2DIAGNOSTIC,   148, -4.652342770955e-01, 2.149566921154e-07, 6.0580e+01, 3.4173e-01, 
+ 2DIAGNOSTIC,   149, -4.652342770955e-01, 2.135138645375e-07, 6.0923e+01, 3.4307e-01, 
+ 2DIAGNOSTIC,   150, -4.652342770955e-01, 2.120902768479e-07, 6.1268e+01, 3.4473e-01, 
+ 2DIAGNOSTIC,   151, -4.652342770955e-01, 2.106855467579e-07, 6.1610e+01, 3.4169e-01, 
+ 2DIAGNOSTIC,   152, -4.652342770955e-01, 2.092993020304e-07, 6.1953e+01, 3.4310e-01, 
+ 2DIAGNOSTIC,   153, -4.652342770955e-01, 2.079311801715e-07, 6.2296e+01, 3.4288e-01, 
+ 2DIAGNOSTIC,   154, -4.652342770955e-01, 2.065808280974e-07, 6.2638e+01, 3.4185e-01, 
+ 2DIAGNOSTIC,   155, -4.652342770955e-01, 2.052479018402e-07, 6.2977e+01, 3.3961e-01, 
+ 2DIAGNOSTIC,   156, -4.652342770955e-01, 2.039320662495e-07, 6.3316e+01, 3.3900e-01, 
+ 2DIAGNOSTIC,   157, -4.652342770955e-01, 2.026329947178e-07, 6.3658e+01, 3.4198e-01, 
+ 2DIAGNOSTIC,   158, -4.652342770955e-01, 2.013503689049e-07, 6.3999e+01, 3.4060e-01, 
+ 2DIAGNOSTIC,   159, -4.652342770955e-01, 2.000838784837e-07, 6.4340e+01, 3.4099e-01, 
+ 2DIAGNOSTIC,   160, -4.652342770955e-01, 1.988332208784e-07, 6.4678e+01, 3.3846e-01, 
+ 2DIAGNOSTIC,   161, -4.652342770955e-01, 1.975981010387e-07, 6.5019e+01, 3.4107e-01, 
+ 2DIAGNOSTIC,   162, -4.652342770955e-01, 1.963782312016e-07, 6.5379e+01, 3.6018e-01, 
+ 2DIAGNOSTIC,   163, -4.652342770955e-01, 1.951733306534e-07, 6.5732e+01, 3.5243e-01, 
+ 2DIAGNOSTIC,   164, -4.652342770955e-01, 1.939831255470e-07, 6.6087e+01, 3.5475e-01, 
+ 2DIAGNOSTIC,   165, -4.652342770955e-01, 1.928073486632e-07, 6.6453e+01, 3.6664e-01, 
+ 2DIAGNOSTIC,   166, -4.652342770955e-01, 1.916457392174e-07, 6.6813e+01, 3.6011e-01, 
+ 2DIAGNOSTIC,   167, -4.652342770955e-01, 1.904980426867e-07, 6.7186e+01, 3.7251e-01, 
+ 2DIAGNOSTIC,   168, -4.652342770955e-01, 1.893640105971e-07, 6.7551e+01, 3.6507e-01, 
+ 2DIAGNOSTIC,   169, -4.652342770955e-01, 1.882434003597e-07, 6.7907e+01, 3.5618e-01, 
+ 2DIAGNOSTIC,   170, -4.652342770955e-01, 1.871359750971e-07, 6.8264e+01, 3.5687e-01, 
+ 2DIAGNOSTIC,   171, -4.652342770955e-01, 1.860415034657e-07, 6.8618e+01, 3.5389e-01, 
+ 2DIAGNOSTIC,   172, -4.652342770955e-01, 1.849597595152e-07, 6.8978e+01, 3.6041e-01, 
+ 2DIAGNOSTIC,   173, -4.652342770955e-01, 1.838905225073e-07, 6.9340e+01, 3.6208e-01, 
+ 2DIAGNOSTIC,   174, -4.652342770955e-01, 1.828335767836e-07, 6.9707e+01, 3.6668e-01, 
+ 2DIAGNOSTIC,   175, -4.652342770955e-01, 1.817887116196e-07, 7.0072e+01, 3.6452e-01, 
+ 2DIAGNOSTIC,   176, -4.652342770955e-01, 1.807557210723e-07, 7.0433e+01, 3.6121e-01, 
+ 2DIAGNOSTIC,   177, -4.652342770955e-01, 1.797344038636e-07, 7.0804e+01, 3.7074e-01, 
+ 2DIAGNOSTIC,   178, -4.652342770955e-01, 1.787245632236e-07, 7.1167e+01, 3.6329e-01, 
+ 2DIAGNOSTIC,   179, -4.652342770955e-01, 1.777260067986e-07, 7.1534e+01, 3.6759e-01, 
+ 2DIAGNOSTIC,   180, -4.652342770955e-01, 1.767385464958e-07, 7.1899e+01, 3.6477e-01, 
+ 2DIAGNOSTIC,   181, -4.652342770955e-01, 1.757619983852e-07, 7.2238e+01, 3.3913e-01, 
+ 2DIAGNOSTIC,   182, -4.652342770955e-01, 1.747961825803e-07, 7.2580e+01, 3.4132e-01, 
+ 2DIAGNOSTIC,   183, -4.652342770955e-01, 1.738409231219e-07, 7.2920e+01, 3.4014e-01, 
+ 2DIAGNOSTIC,   184, -4.652342770955e-01, 1.728960478823e-07, 7.3262e+01, 3.4190e-01, 
+ 2DIAGNOSTIC,   185, -4.652342770955e-01, 1.719613884508e-07, 7.3602e+01, 3.4080e-01, 
+ 2DIAGNOSTIC,   186, -4.652342770955e-01, 1.710367800436e-07, 7.3945e+01, 3.4251e-01, 
+ 2DIAGNOSTIC,   187, -4.652342770955e-01, 1.701220613982e-07, 7.4287e+01, 3.4242e-01, 
+ 2DIAGNOSTIC,   188, -4.652342770955e-01, 1.692170746859e-07, 7.4631e+01, 3.4407e-01, 
+ 2DIAGNOSTIC,   189, -4.652342770955e-01, 1.683216654174e-07, 7.4973e+01, 3.4196e-01, 
+ 2DIAGNOSTIC,   190, -4.652342770955e-01, 1.674356823536e-07, 7.5315e+01, 3.4136e-01, 
+ 2DIAGNOSTIC,   191, -4.652342770955e-01, 1.665589774288e-07, 7.5660e+01, 3.4558e-01, 
+ 2DIAGNOSTIC,   192, -4.652342770955e-01, 1.656914056626e-07, 7.6002e+01, 3.4201e-01, 
+ 2DIAGNOSTIC,   193, -4.652342770955e-01, 1.648328250680e-07, 7.6345e+01, 3.4224e-01, 
+ 2DIAGNOSTIC,   194, -4.652342770955e-01, 1.639830966007e-07, 7.6694e+01, 3.4890e-01, 
+ 2DIAGNOSTIC,   195, -4.652342770955e-01, 1.631420840573e-07, 7.7035e+01, 3.4177e-01, 
+ 2DIAGNOSTIC,   196, -4.652342770955e-01, 1.623096540244e-07, 7.7381e+01, 3.4559e-01, 
+ 2DIAGNOSTIC,   197, -4.652342770955e-01, 1.614856757880e-07, 7.7721e+01, 3.4054e-01, 
+ 2DIAGNOSTIC,   198, -4.652342770955e-01, 1.606700212840e-07, 7.8065e+01, 3.4367e-01, 
+ 2DIAGNOSTIC,   199, -4.652342770955e-01, 1.598625650120e-07, 7.8409e+01, 3.4362e-01, 
+ 2DIAGNOSTIC,   200, -4.652342770955e-01, 1.590631839958e-07, 7.8751e+01, 3.4210e-01, 
+ 2DIAGNOSTIC,   201, -4.652342770955e-01, 1.582717576911e-07, 7.9094e+01, 3.4338e-01, 
+ 2DIAGNOSTIC,   202, -4.652342770955e-01, 1.574881679537e-07, 7.9437e+01, 3.4282e-01, 
+ 2DIAGNOSTIC,   203, -4.652342770955e-01, 1.567122989606e-07, 7.9779e+01, 3.4154e-01, 
+ 2DIAGNOSTIC,   204, -4.652342770955e-01, 1.559440371626e-07, 8.0120e+01, 3.4157e-01, 
+ 2DIAGNOSTIC,   205, -4.652342770955e-01, 1.551832712245e-07, 8.0461e+01, 3.4136e-01, 
+ 2DIAGNOSTIC,   206, -4.652342770955e-01, 1.544298919784e-07, 8.0803e+01, 3.4130e-01, 
+ 2DIAGNOSTIC,   207, -4.652342770955e-01, 1.536837923553e-07, 8.1145e+01, 3.4232e-01, 
+ 2DIAGNOSTIC,   208, -4.652342770955e-01, 1.529448673586e-07, 8.1486e+01, 3.4131e-01, 
+ 2DIAGNOSTIC,   209, -4.652342770955e-01, 1.522130139899e-07, 8.1827e+01, 3.4104e-01, 
+ 2DIAGNOSTIC,   210, -4.652342770955e-01, 1.514881312207e-07, 8.2169e+01, 3.4172e-01, 
+ 2DIAGNOSTIC,   211, -4.652342770955e-01, 1.507701199331e-07, 8.2510e+01, 3.4070e-01, 
+ 2DIAGNOSTIC,   212, -4.652342770955e-01, 1.500588828812e-07, 8.2855e+01, 3.4471e-01, 
+ 2DIAGNOSTIC,   213, -4.652342770955e-01, 1.493543246465e-07, 8.3195e+01, 3.4003e-01, 
+ 2DIAGNOSTIC,   214, -4.652342770955e-01, 1.486563515956e-07, 8.3537e+01, 3.4283e-01, 
+ 2DIAGNOSTIC,   215, -4.652342770955e-01, 1.479648718307e-07, 8.3878e+01, 3.4048e-01, 
+ 2DIAGNOSTIC,   216, -4.652342770955e-01, 1.472797951643e-07, 8.4219e+01, 3.4073e-01, 
+ 2DIAGNOSTIC,   217, -4.652342770955e-01, 1.466010330631e-07, 8.4557e+01, 3.3865e-01, 
+ 2DIAGNOSTIC,   218, -4.652342770955e-01, 1.459284986243e-07, 8.4897e+01, 3.4003e-01, 
+ 2DIAGNOSTIC,   219, -4.652342770955e-01, 1.452621065327e-07, 8.5255e+01, 3.5723e-01, 
+ 2DIAGNOSTIC,   220, -4.652342770955e-01, 1.446017730165e-07, 8.5611e+01, 3.5622e-01, 
+ 2DIAGNOSTIC,   221, -4.652342770955e-01, 1.439474158335e-07, 8.5966e+01, 3.5484e-01, 
+ 2DIAGNOSTIC,   222, -4.652342770955e-01, 1.432989542140e-07, 8.6325e+01, 3.5941e-01, 
+ 2DIAGNOSTIC,   223, -4.652342770955e-01, 1.426563088387e-07, 8.6696e+01, 3.7145e-01, 
+ 2DIAGNOSTIC,   224, -4.652342770955e-01, 1.420194018055e-07, 8.7074e+01, 3.7712e-01, 
+ 2DIAGNOSTIC,   225, -4.652342770955e-01, 1.413881565975e-07, 8.7437e+01, 3.6361e-01, 
+ 2DIAGNOSTIC,   226, -4.652342770955e-01, 1.407624980508e-07, 8.7801e+01, 3.6409e-01, 
+ 2DIAGNOSTIC,   227, -4.652342770955e-01, 1.401423523287e-07, 8.8167e+01, 3.6545e-01, 
+ 2DIAGNOSTIC,   228, -4.652342770955e-01, 1.395276468903e-07, 8.8534e+01, 3.6708e-01, 
+ 2DIAGNOSTIC,   229, -4.652342770955e-01, 1.389183104548e-07, 8.8873e+01, 3.3964e-01, 
+ 2DIAGNOSTIC,   230, -4.652342770955e-01, 1.383142729950e-07, 8.9216e+01, 3.4249e-01, 
+ 2DIAGNOSTIC,   231, -4.652342770955e-01, 1.377154656788e-07, 8.9557e+01, 3.4147e-01, 
+ 2DIAGNOSTIC,   232, -4.652342770955e-01, 1.371218208788e-07, 8.9900e+01, 3.4269e-01, 
+ 2DIAGNOSTIC,   233, -4.652342770955e-01, 1.365332721109e-07, 9.0242e+01, 3.4231e-01, 
+ 2DIAGNOSTIC,   234, -4.652342770955e-01, 1.359497540446e-07, 9.0583e+01, 3.4087e-01, 
+ 2DIAGNOSTIC,   235, -4.652342770955e-01, 1.353712024473e-07, 9.0925e+01, 3.4151e-01, 
+ 2DIAGNOSTIC,   236, -4.652342770955e-01, 1.347975541856e-07, 9.1267e+01, 3.4174e-01, 
+ 2DIAGNOSTIC,   237, -4.652342770955e-01, 1.342287471858e-07, 9.1609e+01, 3.4197e-01, 
+ 2DIAGNOSTIC,   238, -4.652342770955e-01, 1.336647204196e-07, 9.1951e+01, 3.4254e-01, 
+ 2DIAGNOSTIC,   239, -4.652342770955e-01, 1.331054138801e-07, 9.2294e+01, 3.4303e-01, 
+ 2DIAGNOSTIC,   240, -4.652342770955e-01, 1.325507685591e-07, 9.2637e+01, 3.4266e-01, 
+ 2DIAGNOSTIC,   241, -4.652342770955e-01, 1.320007264301e-07, 9.2979e+01, 3.4273e-01, 
+ 2DIAGNOSTIC,   242, -4.652342770955e-01, 1.314552304232e-07, 9.3324e+01, 3.4428e-01, 
+ 2DIAGNOSTIC,   243, -4.652342770955e-01, 1.309142244107e-07, 9.3665e+01, 3.4169e-01, 
+ 2DIAGNOSTIC,   244, -4.652342770955e-01, 1.303776531849e-07, 9.4008e+01, 3.4280e-01, 
+ 2DIAGNOSTIC,   245, -4.652342770955e-01, 1.298454624377e-07, 9.4351e+01, 3.4313e-01, 
+ 2DIAGNOSTIC,   246, -4.652342770955e-01, 1.293175987439e-07, 9.4693e+01, 3.4199e-01, 
+ 2DIAGNOSTIC,   247, -4.652342770955e-01, 1.287940095450e-07, 9.5036e+01, 3.4289e-01, 
+ 2DIAGNOSTIC,   248, -4.652342770955e-01, 1.282746431306e-07, 9.5376e+01, 3.4012e-01, 
+ 2DIAGNOSTIC,   249, -4.652342770955e-01, 1.277594486194e-07, 9.5718e+01, 3.4135e-01, 
+ 2DIAGNOSTIC,   250, -4.652342770955e-01, 1.272483759456e-07, 9.6061e+01, 3.4329e-01, 
+DIAGNOSTIC,Iteration,metricValue,convergenceValue,ITERATION_TIME_INDEX,SINCE_LAST
+ 2DIAGNOSTIC,     1, -4.055856094173e-01, 1.797693134862e+308, 9.8348e+01, 2.2872e+00, 
+ 2DIAGNOSTIC,     2, -4.056745063966e-01, 1.797693134862e+308, 9.9841e+01, 1.4931e+00, 
+ 2DIAGNOSTIC,     3, -4.057196891681e-01, 1.797693134862e+308, 1.0153e+02, 1.6916e+00, 
+ 2DIAGNOSTIC,     4, -4.057242816720e-01, 1.797693134862e+308, 1.0302e+02, 1.4911e+00, 
+ 2DIAGNOSTIC,     5, -4.057448921536e-01, 1.797693134862e+308, 1.0492e+02, 1.8991e+00, 
+ 2DIAGNOSTIC,     6, -4.057573200228e-01, 1.797693134862e+308, 1.0766e+02, 2.7331e+00, 
+ 2DIAGNOSTIC,     7, -4.057569532841e-01, 1.797693134862e+308, 1.1055e+02, 2.8942e+00, 
+ 2DIAGNOSTIC,     8, -4.057569425471e-01, 1.797693134862e+308, 1.1263e+02, 2.0811e+00, 
+ 2DIAGNOSTIC,     9, -4.057569166609e-01, 1.797693134862e+308, 1.1432e+02, 1.6896e+00, 
+ 2DIAGNOSTIC,    10, -4.057568936399e-01, 2.326707449010e-05, 1.1582e+02, 1.4972e+00, 
+ 2DIAGNOSTIC,    11, -4.057568695742e-01, 1.202040866721e-05, 1.1732e+02, 1.4986e+00, 
+ 2DIAGNOSTIC,    12, -4.057568458269e-01, 6.962607144112e-06, 1.1903e+02, 1.7090e+00, 
+ 2DIAGNOSTIC,    13, -4.057567329019e-01, 4.739525544417e-06, 1.2073e+02, 1.7071e+00, 
+ 2DIAGNOSTIC,    14, -4.057567354259e-01, 2.833515881581e-06, 1.2223e+02, 1.4945e+00, 
+ 2DIAGNOSTIC,    15, -4.057566705393e-01, 2.072955961316e-06, 1.2371e+02, 1.4871e+00, 
+ 2DIAGNOSTIC,    16, -4.057566778352e-01, 1.956732754479e-06, 1.2519e+02, 1.4790e+00, 
+ 2DIAGNOSTIC,    17, -4.057566899128e-01, 1.842451759798e-06, 1.2669e+02, 1.4925e+00, 
+ 2DIAGNOSTIC,    18, -4.057567058162e-01, 1.743760630391e-06, 1.2864e+02, 1.9584e+00, 
+ 2DIAGNOSTIC,    19, -4.057566851575e-01, 1.655939167566e-06, 1.3043e+02, 1.7884e+00, 
+ 2DIAGNOSTIC,    20, -4.057566387709e-01, 1.576194520340e-06, 1.3222e+02, 1.7840e+00, 
+ 2DIAGNOSTIC,    21, -4.057565889207e-01, 1.502943592767e-06, 1.3400e+02, 1.7808e+00, 
+ 2DIAGNOSTIC,    22, -4.057565667772e-01, 1.436077605013e-06, 1.3578e+02, 1.7805e+00, 
+ 2DIAGNOSTIC,    23, -4.057565441687e-01, 1.371771509405e-06, 1.3736e+02, 1.5789e+00, 
+ 2DIAGNOSTIC,    24, -4.057564912396e-01, 1.312477808373e-06, 1.3914e+02, 1.7813e+00, 
+ 2DIAGNOSTIC,    25, -4.057564969715e-01, 1.257548716112e-06, 1.4091e+02, 1.7761e+00, 
+ 2DIAGNOSTIC,    26, -4.057564288569e-01, 1.206591871715e-06, 1.4263e+02, 1.7190e+00, 
+ 2DIAGNOSTIC,    27, -4.057563777759e-01, 1.159998984687e-06, 1.4412e+02, 1.4870e+00, 
+ 2DIAGNOSTIC,    28, -4.057563555916e-01, 1.118307520274e-06, 1.4604e+02, 1.9208e+00, 
+ 2DIAGNOSTIC,    29, -4.057563003707e-01, 1.079344788914e-06, 1.4775e+02, 1.7086e+00, 
+ 2DIAGNOSTIC,    30, -4.057563025004e-01, 1.043646619354e-06, 1.4925e+02, 1.4964e+00, 
+ 2DIAGNOSTIC,    31, -4.057562776932e-01, 1.010140628067e-06, 1.5095e+02, 1.7020e+00, 
+ 2DIAGNOSTIC,    32, -4.057562803516e-01, 9.798445445505e-07, 1.5266e+02, 1.7098e+00, 
+ 2DIAGNOSTIC,    33, -4.057561980766e-01, 9.505284659997e-07, 1.5435e+02, 1.6937e+00, 
+ 2DIAGNOSTIC,    34, -4.057561485126e-01, 9.221246572398e-07, 1.5605e+02, 1.7000e+00, 
+ 2DIAGNOSTIC,    35, -4.057560854929e-01, 8.955129080189e-07, 1.5775e+02, 1.7017e+00, 
+ 2DIAGNOSTIC,    36, -4.057560306818e-01, 8.692695344023e-07, 1.5924e+02, 1.4879e+00, 
+ 2DIAGNOSTIC,    37, -4.057560339992e-01, 8.449139395905e-07, 1.6072e+02, 1.4820e+00, 
+ 2DIAGNOSTIC,    38, -4.057560735073e-01, 8.235903316001e-07, 1.6242e+02, 1.6957e+00, 
+ 2DIAGNOSTIC,    39, -4.057560788942e-01, 8.037382479634e-07, 1.6390e+02, 1.4771e+00, 
+ 2DIAGNOSTIC,    40, -4.057560427249e-01, 7.854408521114e-07, 1.6559e+02, 1.6983e+00, 
+ 2DIAGNOSTIC,    41, -4.057559892697e-01, 7.676537213848e-07, 1.6710e+02, 1.5023e+00, 
+ 2DIAGNOSTIC,    42, -4.057560028235e-01, 7.518001436599e-07, 1.6880e+02, 1.7052e+00, 
+ 2DIAGNOSTIC,    43, -4.057559637067e-01, 7.351993134321e-07, 1.7051e+02, 1.7102e+00, 
+ 2DIAGNOSTIC,    44, -4.057559484248e-01, 7.187825553957e-07, 1.7243e+02, 1.9131e+00, 
+ 2DIAGNOSTIC,    45, -4.057559291969e-01, 7.022656125788e-07, 1.7414e+02, 1.7102e+00, 
+ 2DIAGNOSTIC,    46, -4.057558886747e-01, 6.854765722750e-07, 1.7562e+02, 1.4870e+00, 
+ 2DIAGNOSTIC,    47, -4.057558365422e-01, 6.692413446439e-07, 1.7732e+02, 1.6953e+00, 
+ 2DIAGNOSTIC,    48, -4.057557875288e-01, 6.542680121707e-07, 1.7901e+02, 1.6930e+00, 
+ 2DIAGNOSTIC,    49, -4.057556631556e-01, 6.390318144471e-07, 1.8112e+02, 2.1060e+00, 
+ 2DIAGNOSTIC,    50, -4.057556376738e-01, 6.245673175899e-07, 1.8280e+02, 1.6858e+00, 
+ 2DIAGNOSTIC,    51, -4.057554948729e-01, 6.090672771582e-07, 1.8447e+02, 1.6701e+00, 
+ 2DIAGNOSTIC,    52, -4.057554717343e-01, 5.954895897151e-07, 1.8615e+02, 1.6768e+00, 
+ 2DIAGNOSTIC,    53, -4.057553644226e-01, 5.820426713481e-07, 1.8784e+02, 1.6882e+00, 
+ 2DIAGNOSTIC,    54, -4.057553381207e-01, 5.703237521033e-07, 1.8953e+02, 1.6919e+00, 
+ 2DIAGNOSTIC,    55, -4.057553115992e-01, 5.602528808796e-07, 1.9102e+02, 1.4915e+00, 
+ 2DIAGNOSTIC,    56, -4.057552879787e-01, 5.514818279678e-07, 1.9271e+02, 1.6873e+00, 
+ 2DIAGNOSTIC,    57, -4.057552958217e-01, 5.440748326278e-07, 1.9460e+02, 1.8959e+00, 
+ 2DIAGNOSTIC,    58, -4.057552434079e-01, 5.370682131800e-07, 1.9629e+02, 1.6826e+00, 
+ 2DIAGNOSTIC,    59, -4.057551956329e-01, 5.293594790221e-07, 1.9776e+02, 1.4764e+00, 
+ 2DIAGNOSTIC,    60, -4.057551804720e-01, 5.224172648643e-07, 1.9945e+02, 1.6887e+00, 
+ 2DIAGNOSTIC,    61, -4.057551870249e-01, 5.148659547802e-07, 2.0094e+02, 1.4873e+00, 
+ 2DIAGNOSTIC,    62, -4.057551715825e-01, 5.077739442666e-07, 2.0264e+02, 1.7011e+00, 
+ 2DIAGNOSTIC,    63, -4.057551328054e-01, 4.998076202564e-07, 2.0432e+02, 1.6838e+00, 
+ 2DIAGNOSTIC,    64, -4.057550610966e-01, 4.915397837923e-07, 2.0603e+02, 1.7067e+00, 
+ 2DIAGNOSTIC,    65, -4.057548851947e-01, 4.818922150970e-07, 2.0773e+02, 1.7030e+00, 
+ 2DIAGNOSTIC,    66, -4.057548125461e-01, 4.722576517208e-07, 2.0944e+02, 1.7010e+00, 
+ 2DIAGNOSTIC,    67, -4.057547963069e-01, 4.637575092316e-07, 2.1112e+02, 1.6895e+00, 
+ 2DIAGNOSTIC,    68, -4.057547509276e-01, 4.555519852942e-07, 2.1283e+02, 1.7041e+00, 
+ 2DIAGNOSTIC,    69, -4.057547675551e-01, 4.484708221696e-07, 2.1454e+02, 1.7079e+00, 
+ 2DIAGNOSTIC,    70, -4.057546600491e-01, 4.415864518770e-07, 2.1602e+02, 1.4870e+00, 
+ 2DIAGNOSTIC,    71, -4.057546193616e-01, 4.358304430841e-07, 2.1773e+02, 1.7053e+00, 
+ 2DIAGNOSTIC,    72, -4.057545716954e-01, 4.307800377037e-07, 2.1985e+02, 2.1191e+00, 
+ 2DIAGNOSTIC,    73, -4.057545481164e-01, 4.263205220026e-07, 2.2156e+02, 1.7124e+00, 
+ 2DIAGNOSTIC,    74, -4.057545238489e-01, 4.220179349781e-07, 2.2333e+02, 1.7724e+00, 
+ 2DIAGNOSTIC,    75, -4.057544646285e-01, 4.164168133161e-07, 2.2490e+02, 1.5720e+00, 
+ 2DIAGNOSTIC,    76, -4.057544376476e-01, 4.108127617912e-07, 2.2668e+02, 1.7771e+00, 
+ 2DIAGNOSTIC,    77, -4.057544423962e-01, 4.060013401915e-07, 2.2821e+02, 1.5249e+00, 
+ 2DIAGNOSTIC,    78, -4.057544529360e-01, 4.016590068705e-07, 2.3015e+02, 1.9394e+00, 
+ 2DIAGNOSTIC,    79, -4.057544575196e-01, 3.982263387086e-07, 2.3169e+02, 1.5435e+00, 
+ 2DIAGNOSTIC,    80, -4.057544038045e-01, 3.939090652133e-07, 2.3322e+02, 1.5284e+00, 
+ 2DIAGNOSTIC,    81, -4.057544483243e-01, 3.901175639302e-07, 2.3496e+02, 1.7446e+00, 
+ 2DIAGNOSTIC,    82, -4.057544232166e-01, 3.860272466960e-07, 2.3667e+02, 1.7050e+00, 
+ 2DIAGNOSTIC,    83, -4.057544053018e-01, 3.818665853701e-07, 2.3878e+02, 2.1091e+00, 
+ 2DIAGNOSTIC,    84, -4.057543765355e-01, 3.775175259763e-07, 2.4047e+02, 1.6946e+00, 
+ 2DIAGNOSTIC,    85, -4.057543404898e-01, 3.726151211227e-07, 2.4196e+02, 1.4848e+00, 
+ 2DIAGNOSTIC,    86, -4.057542611722e-01, 3.671177797107e-07, 2.4387e+02, 1.9103e+00, 
+ 2DIAGNOSTIC,    87, -4.057542325341e-01, 3.618266120765e-07, 2.4556e+02, 1.6940e+00, 
+ 2DIAGNOSTIC,    88, -4.057541738975e-01, 3.566388554477e-07, 2.4704e+02, 1.4798e+00, 
+ 2DIAGNOSTIC,    89, -4.057541437455e-01, 3.518533790853e-07, 2.4853e+02, 1.4922e+00, 
+ 2DIAGNOSTIC,    90, -4.057541496140e-01, 3.473309222856e-07, 2.5021e+02, 1.6738e+00, 
+ 2DIAGNOSTIC,    91, -4.057541579099e-01, 3.439069188420e-07, 2.5190e+02, 1.6964e+00, 
+ 2DIAGNOSTIC,    92, -4.057541325787e-01, 3.407198402583e-07, 2.5383e+02, 1.9276e+00, 
+ 2DIAGNOSTIC,    93, -4.057540784049e-01, 3.375554881134e-07, 2.5556e+02, 1.7331e+00, 
+ 2DIAGNOSTIC,    94, -4.057540236915e-01, 3.342834315224e-07, 2.5710e+02, 1.5408e+00, 
+ 2DIAGNOSTIC,    95, -4.057539980507e-01, 3.310350949227e-07, 2.5862e+02, 1.5164e+00, 
+ 2DIAGNOSTIC,    96, -4.057540080804e-01, 3.277083209276e-07, 2.6014e+02, 1.5153e+00, 
+ 2DIAGNOSTIC,    97, -4.057540221225e-01, 3.247015573915e-07, 2.6185e+02, 1.7148e+00, 
+ 2DIAGNOSTIC,    98, -4.057539150219e-01, 3.208963594639e-07, 2.6398e+02, 2.1264e+00, 
+ 2DIAGNOSTIC,    99, -4.057539207486e-01, 3.173823760454e-07, 2.6569e+02, 1.7128e+00, 
+ 2DIAGNOSTIC,   100, -4.057538999788e-01, 3.142006393640e-07, 2.6739e+02, 1.6977e+00, 
+  Elapsed time (stage 1): 2.6824e+02
+
+
+Stage 2
+  iterations = 50x10x0
+  convergence threshold = 1.0000e-09
+  convergence window size = 15
+  number of levels = 3
+  using the CC metric (radius = 4, weight = 5.0000e-01, use gradient filter = 0)
+  preprocessing:  winsorizing the image intensities
+  preprocessing:  histogram matching the images
+  using the CC metric (radius = 4, weight = 5.0000e-01, use gradient filter = 0)
+  preprocessing:  winsorizing the image intensities
+  preprocessing:  histogram matching the images
+  Shrink factors (level 1 out of 3): [4, 4, 4]
+  Shrink factors (level 2 out of 3): [2, 2, 2]
+  Shrink factors (level 3 out of 3): [1, 1, 1]
+  smoothing sigmas per level: [2, 1, 0]
+  Using default NONE metricSamplingStrategy 
+
+*** Running SyN registration (varianceForUpdateField = 3.0000e+00, varianceForTotalField = 0.0000e+00) ***
+
+XXDIAGNOSTIC,Iteration,metricValue,convergenceValue,ITERATION_TIME_INDEX,SINCE_LAST
+ 1DIAGNOSTIC,     1, -5.026490581202e-01, 1.797693134862e+308, 5.6007e+00, 5.6007e+00, 
+ 1DIAGNOSTIC,     2, -5.094018671315e-01, 1.797693134862e+308, 1.0350e+01, 4.7496e+00, 
+ 1DIAGNOSTIC,     3, -5.156228302849e-01, 1.797693134862e+308, 1.5115e+01, 4.7646e+00, 
+ 1DIAGNOSTIC,     4, -5.217752904083e-01, 1.797693134862e+308, 1.9875e+01, 4.7602e+00, 
+ 1DIAGNOSTIC,     5, -5.265734517400e-01, 1.797693134862e+308, 2.4656e+01, 4.7809e+00, 
+ 1DIAGNOSTIC,     6, -5.312983894574e-01, 1.797693134862e+308, 2.9429e+01, 4.7730e+00, 
+ 1DIAGNOSTIC,     7, -5.351809838147e-01, 1.797693134862e+308, 3.4211e+01, 4.7824e+00, 
+ 1DIAGNOSTIC,     8, -5.392795203388e-01, 1.797693134862e+308, 3.9030e+01, 4.8189e+00, 
+ 1DIAGNOSTIC,     9, -5.433505169542e-01, 1.797693134862e+308, 4.4054e+01, 5.0237e+00, 
+ 1DIAGNOSTIC,    10, -5.472431082022e-01, 1.797693134862e+308, 4.9084e+01, 5.0302e+00, 
+ 1DIAGNOSTIC,    11, -5.508753134225e-01, 1.797693134862e+308, 5.4037e+01, 4.9526e+00, 
+ 1DIAGNOSTIC,    12, -5.542425101371e-01, 1.797693134862e+308, 5.8771e+01, 4.7340e+00, 
+ 1DIAGNOSTIC,    13, -5.571974558680e-01, 1.797693134862e+308, 6.3526e+01, 4.7553e+00, 
+ 1DIAGNOSTIC,    14, -5.599327734144e-01, 1.797693134862e+308, 6.8304e+01, 4.7785e+00, 
+ 1DIAGNOSTIC,    15, -5.623932370824e-01, 4.468126392092e-03, 7.3055e+01, 4.7505e+00, 
+ 1DIAGNOSTIC,    16, -5.649944085462e-01, 3.890756312197e-03, 7.7813e+01, 4.7577e+00, 
+ 1DIAGNOSTIC,    17, -5.674343958253e-01, 3.412034540765e-03, 8.2579e+01, 4.7661e+00, 
+ 1DIAGNOSTIC,    18, -5.695193796310e-01, 3.007602009711e-03, 8.7344e+01, 4.7652e+00, 
+ 1DIAGNOSTIC,    19, -5.712553961919e-01, 2.667242058692e-03, 9.2098e+01, 4.7544e+00, 
+ 1DIAGNOSTIC,    20, -5.730947687352e-01, 2.366576534168e-03, 9.6851e+01, 4.7527e+00, 
+ 1DIAGNOSTIC,    21, -5.748145041114e-01, 2.103647106844e-03, 1.0162e+02, 4.7644e+00, 
+ 1DIAGNOSTIC,    22, -5.763747004658e-01, 1.862934967883e-03, 1.0636e+02, 4.7441e+00, 
+ 1DIAGNOSTIC,    23, -5.778199041263e-01, 1.648835361476e-03, 1.1112e+02, 4.7623e+00, 
+ 1DIAGNOSTIC,    24, -5.789401663831e-01, 1.458253359429e-03, 1.1587e+02, 4.7516e+00, 
+ 1DIAGNOSTIC,    25, -5.803723853205e-01, 1.295320372522e-03, 1.2063e+02, 4.7615e+00, 
+ 1DIAGNOSTIC,    26, -5.814981105719e-01, 1.153445648114e-03, 1.2542e+02, 4.7880e+00, 
+ 1DIAGNOSTIC,    27, -5.827979236583e-01, 1.033029420258e-03, 1.3045e+02, 5.0293e+00, 
+ 1DIAGNOSTIC,    28, -5.834209854215e-01, 9.213838102865e-04, 1.3549e+02, 5.0414e+00, 
+ 1DIAGNOSTIC,    29, -5.845098940299e-01, 8.238354624395e-04, 1.4043e+02, 4.9388e+00, 
+ 1DIAGNOSTIC,    30, -5.852965806409e-01, 7.347855269779e-04, 1.4517e+02, 4.7420e+00, 
+ 1DIAGNOSTIC,    31, -5.861405188889e-01, 6.582552063428e-04, 1.4991e+02, 4.7375e+00, 
+ 1DIAGNOSTIC,    32, -5.869189877712e-01, 5.928784094487e-04, 1.5465e+02, 4.7426e+00, 
+ 1DIAGNOSTIC,    33, -5.878313499343e-01, 5.372145499711e-04, 1.5939e+02, 4.7329e+00, 
+ 1DIAGNOSTIC,    34, -5.885889064554e-01, 4.867355297122e-04, 1.6410e+02, 4.7130e+00, 
+ 1DIAGNOSTIC,    35, -5.891996684481e-01, 4.420816351270e-04, 1.6882e+02, 4.7153e+00, 
+ 1DIAGNOSTIC,    36, -5.905050319037e-01, 4.096289447521e-04, 1.7354e+02, 4.7254e+00, 
+ 1DIAGNOSTIC,    37, -5.911545724989e-01, 3.814802989545e-04, 1.7832e+02, 4.7741e+00, 
+ 1DIAGNOSTIC,    38, -5.919476233458e-01, 3.584091697157e-04, 1.8306e+02, 4.7419e+00, 
+ 1DIAGNOSTIC,    39, -5.928016863319e-01, 3.381534350853e-04, 1.8782e+02, 4.7663e+00, 
+ 1DIAGNOSTIC,    40, -5.934255157975e-01, 3.216996980268e-04, 1.9257e+02, 4.7486e+00, 
+ 1DIAGNOSTIC,    41, -5.940289229279e-01, 3.064109912081e-04, 1.9732e+02, 4.7431e+00, 
+ 1DIAGNOSTIC,    42, -5.951098871958e-01, 2.979312865803e-04, 2.0207e+02, 4.7559e+00, 
+ 1DIAGNOSTIC,    43, -5.957398569075e-01, 2.866275393376e-04, 2.0682e+02, 4.7446e+00, 
+ 1DIAGNOSTIC,    44, -5.963118878615e-01, 2.761665413093e-04, 2.1157e+02, 4.7582e+00, 
+ 1DIAGNOSTIC,    45, -5.971127412290e-01, 2.661397783617e-04, 2.1634e+02, 4.7710e+00, 
+ 1DIAGNOSTIC,    46, -5.979128353404e-01, 2.570732627195e-04, 2.2111e+02, 4.7639e+00, 
+ 1DIAGNOSTIC,    47, -5.983105020321e-01, 2.456338662941e-04, 2.2585e+02, 4.7432e+00, 
+ 1DIAGNOSTIC,    48, -5.993535526574e-01, 2.378309575949e-04, 2.3061e+02, 4.7592e+00, 
+ 1DIAGNOSTIC,    49, -5.993882064085e-01, 2.253644888244e-04, 2.3536e+02, 4.7525e+00, 
+ 1DIAGNOSTIC,    50, -6.003672340046e-01, 2.142880292756e-04, 2.4011e+02, 4.7501e+00, 
+XXDIAGNOSTIC,Iteration,metricValue,convergenceValue,ITERATION_TIME_INDEX,SINCE_LAST
+ 1DIAGNOSTIC,     1, -5.668798654876e-01, 1.797693134862e+308, 2.8024e+02, 4.0130e+01, 
+ 1DIAGNOSTIC,     2, -5.697633894851e-01, 1.797693134862e+308, 3.1930e+02, 3.9057e+01, 
+ 1DIAGNOSTIC,     3, -5.727403085733e-01, 1.797693134862e+308, 3.5850e+02, 3.9201e+01, 
+ 1DIAGNOSTIC,     4, -5.755731147181e-01, 1.797693134862e+308, 3.9789e+02, 3.9391e+01, 
+ 1DIAGNOSTIC,     5, -5.781367171881e-01, 1.797693134862e+308, 4.3711e+02, 3.9216e+01, 
+ 1DIAGNOSTIC,     6, -5.805562278119e-01, 1.797693134862e+308, 4.7628e+02, 3.9173e+01, 
+ 1DIAGNOSTIC,     7, -5.830017574991e-01, 1.797693134862e+308, 5.1535e+02, 3.9069e+01, 
+ 1DIAGNOSTIC,     8, -5.850952553256e-01, 1.797693134862e+308, 5.5452e+02, 3.9174e+01, 
+ 1DIAGNOSTIC,     9, -5.871426524275e-01, 1.797693134862e+308, 5.9366e+02, 3.9135e+01, 
+ 1DIAGNOSTIC,    10, -5.891259691126e-01, 1.797693134862e+308, 6.3222e+02, 3.8559e+01, 
+  Elapsed time (stage 2): 635.6
+
+
+Total elapsed time: 1176
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+antsApplyTransforms -d 3 -i /opt/templates/OASIS/T_template0_BrainCerebellumProbabilityMask.nii.gz -o /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPriorWarped.nii.gz -r /data/sub-0003062/ses-1/anat/sub-0003062_ses-1_run-1_T1w.nii.gz -n Gaussian -t [ /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPrior0GenericAffine.mat,1 ] -t /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPrior1InverseWarp.nii.gz --float 0 --verbose 1
+Using double precision for computations.
+Input scalar image: /opt/templates/OASIS/T_template0_BrainCerebellumProbabilityMask.nii.gz
+Reference image: /data/sub-0003062/ses-1/anat/sub-0003062_ses-1_run-1_T1w.nii.gz
+=============================================================================
+The composite transform comprises the following transforms (in order): 
+  1. /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPrior1InverseWarp.nii.gz (type = DisplacementFieldTransform)
+  2. inverse of /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPrior0GenericAffine.mat (type = AffineTransform)
+=============================================================================
+Default pixel value: 0
+Interpolation type: GaussianInterpolateImageFunction
+Output warped image: /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPriorWarped.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ThresholdImage 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPriorWarped.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPriorWarped.nii.gz 0.5 1 1 0
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz MD /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPriorWarped.nii.gz 2
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz GetLargestComponent /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+Atropos -d 3 -o /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionSegmentation.nii.gz -a /data/derivatives/antsBrainExtraction/sub-0003062/N4Corrected0.nii.gz -x /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz -i kmeans[ 3 ] -c [ 3,0.0 ] -m [ 0.1,1x1x1 ] -k Gaussian -r 1 --verbose 1
+
+Running Atropos for 3-dimensional images.
+
+Progress: 
+  Iteration 0 (of 3): posterior probability = 0 (annealing temperature = 1)
+  Iteration 1 (of 3): posterior probability = 0.944489 (annealing temperature = 1)
+
+Writing output:
+
+  AtroposSegmentationImageFilter (0x5634ac92bba0)
+    RTTI typeinfo:   itk::ants::AtroposSegmentationImageFilter<itk::Image<float, 3u>, itk::Image<unsigned int, 3u>, itk::Image<unsigned int, 3u> >
+    Reference Count: 1
+    Modified Time: 9092417
+    Debug: Off
+    Object Name: 
+    Observers: 
+      IterationEvent(Command)
+    Inputs: 
+      Primary: (0x5634ac93eff0) *
+      _1: (0x5634ac9422b0)
+    Indexed Inputs: 
+      0: Primary (0x5634ac93eff0)
+      1: _1 (0x5634ac9422b0)
+    Required Input Names: Primary
+    NumberOfRequiredInputs: 1
+    Outputs: 
+      Primary: (0x5634ac938280)
+    Indexed Outputs: 
+      0: Primary (0x5634ac938280)
+    NumberOfRequiredOutputs: 1
+    Number Of Work Units: 128
+    ReleaseDataFlag: Off
+    ReleaseDataBeforeUpdateFlag: Off
+    AbortGenerateData: Off
+    Progress: 0
+    Multithreader: 
+      RTTI typeinfo:   itk::PoolMultiThreader
+      Reference Count: 1
+      Modified Time: 209
+      Debug: Off
+      Object Name: 
+      Observers: 
+        none
+      Number of Work Units: 128
+      Number of Threads: 128
+      Global Maximum Number Of Threads: 128
+      Global Default Number Of Threads: 128
+      Global Default Threader Type: itk::MultiThreaderBaseEnums::Threader::Pool
+      SingleMethod: 0
+      SingleData: 0
+    DynamicMultiThreading: On
+    CoordinateTolerance: 1e-06
+    DirectionTolerance: 1e-06
+    Maximum number of iterations: 3
+    Convergence threshold: 0
+    Number of tissue classes: 3
+    Number of partial volume classes: 0
+    Minimize memory usage: false
+    Initialization strategy: K means clustering
+    Posterior probability formulation: Socrates
+      initial annealing temperature = 1
+      annealing rate = 1
+      minimum annealing temperature = 0.1
+    MRF parameters
+      MRF smoothing factor = 0.1
+      MRF radius = [1, 1, 1]
+    Use asynchronous updating of the labels.
+      ICM parameters
+        maximum ICM code = 13
+        maximum number of ICM iterations = 1
+    No outlier handling.
+    Tissue class 1: proportion = 0.204454
+      GaussianListSampleFunction (0x5634ac940480)
+        mean = [88.50605789630607], covariance = [1538.17]
+    Tissue class 2: proportion = 0.417713
+      GaussianListSampleFunction (0x5634ac93bb70)
+        mean = [178.62976972068216], covariance = [554.813]
+    Tissue class 3: proportion = 0.377833
+      GaussianListSampleFunction (0x5634ac947970)
+        mean = [251.05549962071237], covariance = [392.14]
+Elapsed time: 17.996
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionSegmentation.nii.gz PadImage /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionSegmentation.nii.gz 10
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPriorWarped.nii.gz PadImage /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPriorWarped.nii.gz 10
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ThresholdImage 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionSegmentation.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionWM.nii.gz 3 3 1 0
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ThresholdImage 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionSegmentation.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz 2 2 1 0
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ThresholdImage 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionSegmentation.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionCSF.nii.gz 1 1 1 0
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionWM.nii.gz GetLargestComponent /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionWM.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz GetLargestComponent /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionTmp.nii.gz FillHoles /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz 2
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+MultiplyImages 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionTmp.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+MultiplyImages 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionWM.nii.gz 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionWM.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionTmp.nii.gz ME /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionCSF.nii.gz 10
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz addtozero /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionTmp.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+MultiplyImages 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz 2 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionSegmentation.nii.gz addtozero /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionWM.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ThresholdImage 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionSegmentation.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz 3 3 1 0
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ThresholdImage 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionSegmentation.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionTmp.nii.gz 2 2 1 0
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz addtozero /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionTmp.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz ME /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz 2
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz GetLargestComponent /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz MD /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz 4
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz FillHoles /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz 2
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz addtozero /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPriorWarped.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz MD /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz 5
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz ME /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz 5
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionSegmentation.nii.gz PadImage /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionSegmentation.nii.gz -10
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz PadImage /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz -10
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionWM.nii.gz PadImage /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionWM.nii.gz -10
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz PadImage /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz -10
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionCSF.nii.gz PadImage /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionCSF.nii.gz -10
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+ImageMath 3 /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPriorWarped.nii.gz PadImage /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPriorWarped.nii.gz -10
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+MultiplyImages 3 /data/derivatives/antsBrainExtraction/sub-0003062/N4Corrected0.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionBrain.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+CopyImageHeaderInformation /data/sub-0003062/ses-1/anat/sub-0003062_ses-1_run-1_T1w.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionBrain.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionBrain.nii.gz 1 1 1 0
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+CopyImageHeaderInformation /data/sub-0003062/ses-1/anat/sub-0003062_ses-1_run-1_T1w.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionMask.nii.gz 1 1 1 0
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+
+--------------------------------------------------------------------------------------
+ Done with brain extraction:  0h 21m 52s
+--------------------------------------------------------------------------------------
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPriorWarped.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPrior1Warp.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionPrior1InverseWarp.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionTmp.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionGM.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionCSF.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionSegmentation.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffine.mat
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffineMoving.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionInitialAffineFixed.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionLaplacian.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionTemplateLaplacian.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/BrainExtractionWM.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/N4Truncated0.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+
+BEGIN >>>>>>>>>>>>>>>>>>>>
+rm /data/derivatives/antsBrainExtraction/sub-0003062/N4Corrected0.nii.gz
+END   <<<<<<<<<<<<<<<<<<<<
+
+

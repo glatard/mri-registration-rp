@@ -74,7 +74,7 @@ warped_images = list(
     Path("dataset/ds004513/derivatives/flint/antsRegistration").rglob("Warped.nii.gz")
 )
 template = Path("tpl-MNI152NLin2009cAsym_res-01_desc-brain_T1w.nii.gz")
-output_dir = Path("gifs/vrpec")
+output_dir = Path("gifs/antsBrainExtraction")
 
 for image in tqdm(warped_images):
     for plane in ["sagittal", "coronal", "axial"]:
