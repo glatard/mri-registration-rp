@@ -35,7 +35,7 @@ ants_align () {
         -B ${DATA_DIR}:${DATA_DIR} \
         -B ${OUTPUT_DIR}:${OUTPUT_DIR} \
         -B ${TEMPLATEFLOW_DIR}:/templateflow \
-        --env VFC_BACKENDS=$1 \
+        --env VFC_BACKENDS="$1" \
         ${SIF_IMG} antsRegistration \
         --verbose 1 \
         --dimensionality 3 \
@@ -60,7 +60,7 @@ ants_rigid () {
         -B ${DATA_DIR}:${DATA_DIR} \
         -B ${OUTPUT_DIR}:${OUTPUT_DIR} \
         -B ${TEMPLATEFLOW_DIR}:/templateflow \
-        --env VFC_BACKENDS=$1 \
+        --env VFC_BACKENDS="$1" \
         ${SIF_IMG} antsRegistration \
         --verbose 1 \
         --dimensionality 3 \
@@ -85,7 +85,7 @@ ants_affine () {
         -B ${DATA_DIR}:${DATA_DIR} \
         -B ${OUTPUT_DIR}:${OUTPUT_DIR} \
         -B ${TEMPLATEFLOW_DIR}:/templateflow \
-        --env VFC_BACKENDS=$1 \
+        --env VFC_BACKENDS="$1" \
         ${SIF_IMG} antsRegistration \
         --verbose 1 \
         --dimensionality 3 \
@@ -110,7 +110,7 @@ ants_syn () {
         -B ${DATA_DIR}:${DATA_DIR} \
         -B ${OUTPUT_DIR}:${OUTPUT_DIR} \
         -B ${TEMPLATEFLOW_DIR}:/templateflow \
-        --env VFC_BACKENDS=$1 \
+        --env VFC_BACKENDS="$1" \
         ${SIF_IMG} antsRegistration \
         --verbose 1 \
         --dimensionality 3 \
@@ -176,3 +176,15 @@ case $CONFIG in
     echo "Unknown configuration"
     ;;
 esac
+
+
+parent_dir=${OUTPUT_DIR}
+tar_dir=${parent_dir}.tar
+echo "Creating tar for $parent_dir at $tar_dir"
+tar -cvf $tar_dir -C $(dirname $parent_dir) $(basename $parent_dir)
+echo "Cleaning up unused files..."
+if [ ! -f ${tar_dir} ]; then
+        echo "tar dir not found: skip cleanup"
+        continue
+fi
+find $parent_dir -mindepth 1 ! -name 'Warped.nii.gz' -delete

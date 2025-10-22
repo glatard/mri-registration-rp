@@ -1,6 +1,6 @@
 #!/bin/sh
 #SBATCH --job-name=vprec-space_search
-#SBATCH --time=20:00:00
+#SBATCH --time=2-00:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=8
 #SBATCH --cpus-per-task=8
@@ -37,7 +37,7 @@ for RANGE in ${VPREC_RANGES[@]}; do
         VFC_BACKENDS="libinterflop_vprec.so --range-binary32=$RANGE --precision-binary32=$PRECISION --range-binary64=$RANGE --precision-binary64=$PRECISION"
 
         # Launch in background
-        cmds+=("srun --exclusive -n1 --time=06:00:00 \
+        cmds+=("srun --exclusive -n1 --time=12:00:00 \
          sh ./code/${EXPERIMENT_NAME}/antsRegistration.sh \
          '$VFC_BACKENDS' '$CONFIG' '$SUBJECT_ID' '$OUTPUT_DIR' \
          > $LOG_FILE 2>&1")
