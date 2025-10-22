@@ -14,19 +14,19 @@ export SIF_IMG=${ANTS_BASE_SIF}
 # ANTs (Binary 64) #
 ####################
 export SIF_IMG=${ANTS_VPREC_SIF}
-# TODO Seperate implementation in antsRegistration.sh
-# SBATCH array over all subjects (no combination, only FP64)
+# sbatch --dependency=$brain_extraction \
+#     ${SLURM_OPTS} \
+    # --array=0-$(( ${#SUBJECTS[@]} - 1 )) \
+    # ./code/vprec-space_search/antsRegistration-FP64.sbatch
+sbatch ${SLURM_OPTS} \
+    --array=1-$(( ${#SUBJECTS[@]} - 1 )) \
+    ./code/vprec-space_search/antsRegistration-FP64.sbatch
 
 ###########################
 # ANTs VPREC space search #
 ###########################
 export SIF_IMG=${ANTS_VPREC_SIF}
-# echo "sbatch --dependency=$brain_extraction \
+# sbatch --dependency=$brain_extraction \
 #     --array=0-$(( ${#VPREC_CONFIGS[@]} * ${#SUBJECTS[@]} - 1 )) \
 #     ${SLURM_OPTS} \
-#     ./code/vprec-space_search/antsRegistration.sbatch"
-sbatch \
-    --array=0 \
-    ${SLURM_OPTS} \
-    ./code/vprec-space_search/antsRegistration.sbatch
-# source ./code/vprec-space_search/antsRegistration.sbatch
+#     ./code/vprec-space_search/antsRegistration.sbatch
