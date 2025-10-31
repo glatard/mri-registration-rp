@@ -207,9 +207,10 @@ We recompiled ANTs\footnote{\url{https://github.com/mathdugre/ANTs/tree/paper-ba
 
 \subsection{Dataset}
 \MD{TODO: Add dataset description. Might want to use a different dataset with better quality.}
+We used the CoRR dataset \MD{TODO CITE PAPER}: BMB\_1 (50 subjects), anatomical data acquired from ... We computed the brain extraction using ANTs brain extration tool \MD{TODO CITE PAPER}. We visually inspected all brain masks. \MD{TODO TEST / Validation set}. OASIS template \MD{TODO Specific template + CITATION}.
 
 \subsection{Infrastructure}
-We ran our experiments on the \textit{Narval} cluster from Compute Canada. To enhance reproducibility and HPC support, we containerized all pipeline versions using Docker and converted them to Apptainer images using Docker2Singularity.
+We ran our experiments on the \textit{Rorqual} cluster from the Digital Research Alliance of Canada. To enhance reproducibility and HPC support, we containerized all pipeline versions using Docker and converted them to Apptainer images using Docker2Singularity.
 
 To ensure reproducibility across different systems, we disabled architecture-specific instructions when compiling ITK and ANTs with Verificarlo.
 
@@ -220,17 +221,25 @@ To ensure reproducibility across different systems, we disabled architecture-spe
 
 \section{Results}
 \label{sec:results}
+\subsection{Comparing theoretical and empirical minimum precision}
+\begin{figure*}[htb!]
+	\centering
+	\includegraphics[width=\textwidth]{figures/pmin-overview.pdf}
+	\caption{Minimum precision for ANTs registration: estimated and empirical. We highlight precision with hardware support as dotted horizontal lines.}
+	\label{fig:ants-pmin-overview}
+\end{figure*}
+
 \subsection{Estimating theoretical bounds on ANTs convergence}
-Figure~\ref{fig:ants-pmin} shows the minimum data format precision required for ANTs to converge at each iteration. We compute $p_{min}$ using Equation~\ref{eq:hayford-pmin}. Our results indicate that the convergence of ANTs is mostly unaffected when using FP32 format, with only a minimal set of iterations lacking convergence guarantee. This suggests that FP32 could be used across the entire ANTs pipeline without loss in accuracy,resulting in significant speed up.
+Figure~\ref{fig:ants-pmin-min-max} shows the minimum data format precision required for ANTs to converge at each iteration. We compute $p_{min}$ using Equation~\ref{eq:hayford-pmin}. Our results indicate that the convergence of ANTs is mostly unaffected when using FP32 format, with only a minimal set of iterations lacking convergence guarantee. This suggests that FP32 could be used across the entire ANTs pipeline without loss in accuracy,resulting in significant speed up.
 
 The FP24 format exhibits lower convergence guarantee in the affine stage---level one, two, and three---especially for the last. The last rigid level show similar effect. By consequence, the format may be used to accelerate some registration stages---such as, rigid level 0, 1, and 2, and affine level 0---but may result in accuracy degradation when used across the entire pipeline.
 
 Using TF32 or BF16 provide no guarantee on the convergence of ANTs, across all stages and resolution levels. Thus, those data formats are not suitable to accelerate registration stages. However, future work could explore leveraging TF32 or BF16 to speed up a subset of early iterations within each stages, where the formats still guarantee convergence at those iterations.
 \begin{figure*}[htb!]
 	\centering
-	\includegraphics[width=\textwidth]{figures/hayford-pmin.pdf}
+	\includegraphics[width=\textwidth]{figures/pmin-min-max.pdf}
 	\caption{Minimum precision required for converge in ANTs registration. We highlight precision with hardware support as dotted horizontal lines.}
-	\label{fig:ants-pmin}
+	\label{fig:ants-pmin-min-max}
 \end{figure*}
 
 The current modification we made to ITK and the ANTs pipeline allow us to estimate a Lipschitz constant, loss gradient norm, and parameter norm at each iteration. While our modification works well for the rigid and affine stages, it fails to probe the SyN stage, which always returns a value of zero for the parameters norm. This is likely due to the different algorithm in SyN stage, which computes a displacement vector at each voxel rather than a transformation matrix. We plan to further investigate this issue and adapt our probing method to work with the SyN stage.
@@ -249,26 +258,48 @@ Our theoretical analysis in Section~\ref{sec:rp-theoretical-analysis} shows that
 	\centering
     \begin{subfigure}[t]{\textwidth}
 		\caption{[01xx] Rigid (MI)}
-		\label{subfig:ants-01xx}
+		\label{subfig:ants-search-01xx}
+		\includegraphics[width=\textwidth]{figures/0111-rigid-metric_rel_diff-mean.pdf}
+	\end{subfigure}
+	\begin{subfigure}[t]{\textwidth}
+		\caption{[001x] Affine (MI)}
+		\label{subfig:ants-search-001x}
+		\includegraphics[width=\textwidth]{figures/0011-affine-metric_rel_diff-mean.pdf}
+	\end{subfigure}
+	\begin{subfigure}[t]{\textwidth}
+		\caption{[0001] SyN (CC)}
+		\label{subfig:ants-search-0001}
+		\includegraphics[width=\textwidth]{figures/0001-syn-metric_rel_diff-mean.pdf}
+	\end{subfigure}
+	\caption{Relative difference in similarity metric compared to FP64. We report the mean and standard deviation across subjects $(N=20)$. The x-axis and y-axis show the simulated number of bits for the precision and range, respectively. The colorscale indicates how much the metric differs with FP64---red is worse, green is better, and white indicates equivalence with FP64---with the color intensity representing the magnitude of the relative difference. Data formats with hardware support have a black border---Float32~(r8-p23), Float24~(r7-p16), TensorFloat32~(r8-p10), and BFloat16~(r8-p7).}
+	\label{fig:ants-space-search}
+\end{figure*}
+
+\subsection{Recovering accuracy from lower precision stages}
+\begin{figure*}[htb!]
+	\centering
+    \begin{subfigure}[t]{\textwidth}
+		\caption{[01xx] Rigid (MI)}
+		\label{subfig:ants-recovery-01xx}
 		\includegraphics[width=\textwidth]{figures/0111-rigid-metric_rel_diff-mean.pdf}
 	\end{subfigure}
 	\begin{subfigure}[t]{\textwidth}
 		\caption{[011x] Affine (MI)}
-		\label{subfig:ants-011x}
+		\label{subfig:ants-recovery-011x}
 		\includegraphics[width=\textwidth]{figures/0111-affine-metric_rel_diff-mean.pdf}
 	\end{subfigure}
 	\begin{subfigure}[t]{\textwidth}
 		\caption{[0111] SyN (CC)}
-		\label{subfig:ants-0111}
+		\label{subfig:ants-recovery-0111}
 		\includegraphics[width=\textwidth]{figures/0111-syn-metric_rel_diff-mean.pdf}
 	\end{subfigure}
 	\begin{subfigure}[t]{\textwidth}
 		\caption{[0110] SyN (CC)}
-		\label{subfig:ants-0110}
+		\label{subfig:ants-recovery-0110}
 		\includegraphics[width=\textwidth]{figures/0110-syn-metric_rel_diff-mean.pdf}
 	\end{subfigure}
 	\caption{Relative difference in similarity metric compared to FP64. We report the mean and standard deviation across subjects $(N=20)$. The x-axis and y-axis show the simulated number of bits for the precision and range, respectively. The colorscale indicates how much the metric differs with FP64---red is worse, green is better, and white indicates equivalence with FP64---with the color intensity representing the magnitude of the relative difference. Data formats with hardware support have a black border---Float32~(r8-p23), Float24~(r7-p16), TensorFloat32~(r8-p10), and BFloat16~(r8-p7).}
-	\label{fig:ants-space-search}
+	\label{fig:ants-accuracy-recovery}
 \end{figure*}
 
 \subsection{Performance evaluation of ANTs using single precision}
