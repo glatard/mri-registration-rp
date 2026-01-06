@@ -60,7 +60,7 @@ Reduced precision, Image registration, Performance, MRI, Neuroimaging, ANTs, ITK
 
 \section{Introduction}
 \label{sec:introduction}
-Image registration transforms a pair or collection of images to a common space, enabling comparison between those images. It is a critical step in magnetic resonance imaging (MRI) processing pipeline as it enable the comparison of images acquired at different times, from different subjects, or from different modalities. Therefore, allowing for longitudianal studies, group analysis, or multi-modal imaging. By consequence, registration is an important step in toolkits such as the Advanced Normalization Tools (ANTs) registration pipeline~\cite{TODO}---a widely adopted tool in the community.
+Image registration transforms a pair or collection of images to a common space, enabling comparison between those images. It is a critical step in magnetic resonance imaging (MRI) processing pipeline as it enable the comparison of images acquired at different times, from different subjects, or from different modalities. Therefore, allowing for longitudianal studies, group analysis, or multi-modal imaging. By consequence, registration is an important step in toolkits such as the Advanced Normalization Tools (ANTs) registration framework~\cite{Avants2020-xx}---a widely adopted tool in the community.
 
 MRI registration incurs a significant computational cost, often accounting for a majority of the runtime for MRI processing pipelines. As a result, optimizing registration performance is crucial for improving the overall efficiency of MRI processing---enabling studies with larger cohorts and clinical applications requiring processing in timely manner. Our previous study~\cite{Dugre2025-fs} identified two primary performance bottlenecks in MRI processing pipelines: (1) interpolation computation and (2) memory bandwidth limitations.
 
@@ -105,18 +105,14 @@ The key advantage of simulating reduced precision is the low implementation cost
 \section{Method}
 \label{sec:method}
 \subsection{ANTs Registration SyN}
-The ANTs registration framework is a multi-stage, multi-resolution iterative optimization pipeline that aligns a moving image to a fixed template. The default configuration consists of three sequential stages---rigid, affine, and symmetric normalization (SyN)---each operating across four resolution levels. These levels use a shrink factors of $8 \times 4 \times 2 \times 1$ with corresponding Gaussian smoothing kernels of $3\times2\times1\times0$, respectively. Prior to optimization, the images are aligned via an initial intensity-based center-of-mass transformation.
+The ANTs registration framework~\cite{Avants2020-xx} is a multi-stage, multi-resolution iterative optimization pipeline that aligns a moving image to a fixed template. The default configuration consists of three sequential stages---rigid, affine, and symmetric normalization (SyN)~\cite{Avants2008-ea}---each operating across four resolution levels. These levels use a shrink factors of $8 \times 4 \times 2 \times 1$ with corresponding Gaussian smoothing kernels of $3\times2\times1\times0$, respectively. Prior to optimization, the images are aligned via an initial intensity-based center-of-mass transformation.
 
-The rigid and affine stages utilize mutual information (MI) as the objective function, while the SyN stage uses cross-correlation (CC). Images are smoothed prior to down-sampling at each level. The process terminates when the optimization reaches the maximum number of iterations or when the objective function converges within a threshold of $1 \times 10^{-6}$ over the last $10$ iterations. ANTs leverages the registration framework from the Insight Toolkit (ITK)~\cite{TODO} for computation.
+The rigid and affine stages utilize mutual information (MI) as the objective function, while the SyN stage uses cross-correlation (CC). Images are smoothed prior to down-sampling at each level. The process terminates when the optimization reaches the maximum number of iterations or when the objective function converges within a threshold of $1 \times 10^{-6}$ over the last $10$ iterations. ANTs leverages the registration framework from the Insight Toolkit (ITK)~\cite{Yoo2002-ve, McCormick2014-ok} for computation.
 
 \subsection{Reduced Precision using VPREC}
-Although ANTs provides a flag to enable single-precision computation, our previous study~\cite{Dugre2025-fs} identified a bug in ITK\footnote{\url{https://github.com/InsightSoftwareConsortium/ITK/issues/4593}} causing interpolation operations to always execute in double precision---regardless of compilation or runtime settings. Therefore, the single-precision mode in ANTs is impractical because of the additional casting overhead, resulting in performance degradation compared to the double precision version of the pipeline.
+Although ANTs provides a flag to enable single-precision computation, our previous study~\cite{Dugre2025-fs} identified a bug in ITK\footnote{https://github.com/InsightSoftwareConsortium/ITK/issues/4593} where interpolation operations execute in double precision ($FP64$) regardless of compilation or runtime settings. This results in casting overhead that degrades performance compared to the native $FP64$ pipeline. To explore the impact of reduced precision without these inefficiencies, we used Verificarlo with the VPREC backend to simulate specific bit-widths via compile-time instrumentation. We evaluated combinations of exponent ranges ($6$--$8$ bits) and mantissa precision ($6$--$23$ bits) against the default $FP64$ baseline.
 
-Instead, to explore the impact of reduced precision, we used Verificarlo with the VPREC backend to simulate reduced precision via compile-time instrumentation. We evaluated all combinations of exponent range (6-8 bits) and precision (6-23 bits), as well as the default (FP64) version of the pipeline.
-
-On the one hand, registration failure at any stage may affect subsequent stages, calling for a higher precision in early stages. On the other hand, high-resolution levels or challenging stages likely require greater precision to ensure convergence. Thus, we tested precision reduction both from initial alignment to SyN and from SyN to initial alignment, as detailed in Table~\ref{tab:exp_combinations}.
-
-We recompiled ANTs\footnote{\url{https://github.com/mathdugre/ANTs/tree/paper-base-vprec}} and ITK with Verficarlo, enabling simulation of reduced precision at runtime using VPREC. We disabled instrumentation of all modules and functions involved in metric computations, as low-precision instrumentation in these components caused the pipeline to crash due to metric values and convergence rates deviating from expected range.
+We hypothesized that precision requirements vary by stage: failures in early alignment may propagate, while high-resolution stages likely necessitate finer precision to ensure convergence. Consequently, we tested precision reduction across various stage combinations as detailed in Table~\ref{tab:vprec_combinations}. We recompiled ANTs\footnote{https://github.com/mathdugre/ANTs/tree/paper-base-vprec} and ITK with Verificarlo for runtime simulation. Instrumentation was disabled for metric computation modules, as low-precision noise in these components caused the pipeline to crash due to values deviating from the expected convergence range.
 
 \begin{table}[t]
     \centering
@@ -133,74 +129,42 @@ We recompiled ANTs\footnote{\url{https://github.com/mathdugre/ANTs/tree/paper-ba
     \bottomrule
     \end{tabular}
     \caption{Experiment variations of original and VPREC-instrumented stages. We encode the experiment ID as a four digit binary sequence where 0 indicates default precision (FP64) and 1 indicates reduced precision at each stage: (1) initialization, (2) rigid, (3) affine, (4) SyN.}
-    \label{tab:exp_combinations}
+    \label{tab:vprec_combinations}
 \end{table}
 
 \subsection{Theoretical Analysis of Minimum Precision}
-Hayford et al.~\cite{Hayford2024-kb} proposed a theoretical framework to analyze the effect of rounding error in BF16 arithmetic on the convergence of gradient-based optimization. A key theorem from their work guarantees that if the optimization does not converge to the minimum, then the loss gradient norm $\|\nabla \mathcal{L}\|$ will decrease below a theoretical threshold---dependent on the precision of the data format.
+To analyze the impact of rounding errors on convergence, we adapted the theoretical framework proposed by Hayford et al.~\cite{Hayford2024-kb}. The model characterizes the optimization convergence under reduced precision arithmetic, specifically focusing on the point where rounding noise dominates the gradient signal. While originally derived to bound rounding errors in Deep Learning optimization using $BF16$ arithmetic, the underlying theorem is applicable to any gradient-descent-based optimization, including the iterative registration stages in ANTs.
 
-The authors model the reduced precision gradient descent as follows. Suppose that $\theta$ are the parameters of the optimization, $\mathcal{L}(\theta)$ is the loss function, and $\eta$ is the learning rate. In a reduced precision setting, the gradient descent update is given by:
+Suppose $\theta$ represents the optimization parameters, $\mathcal{L}(\theta)$ the loss function, and $\eta$ the learning rate. In a reduced precision setting with $p$ bits of mantissa precision, the gradient descent update is perturbed by an error of $\delta\theta$:
 \begin{equation}
 	\theta \leftarrow \theta - \eta \nabla\mathcal{L}(\theta + \delta\theta)
 \end{equation}
-where $\delta\theta$ is the error introduced by the reduced precision format---with $p$ bits of precision---that satisfies $\|\delta\theta\| \leq 2^{-p} \|\theta\|$.
+where the rounding error satisfies the relative bound $\|\delta\theta\| \leq 2^{-p} \|\theta\|$.
 
-% Assumptions
-Given the following assumptions are satisfied:
-\begin{enumerate}
-	\item $\mathcal{L}$ is convex;
-	\item $\nabla \mathcal{L}$ is Lipschitz continuous with the best constant $K < \frac{1}{\eta} $; i.e., there exists a constant $K$ such that for all $x$ and $y$, we have:
-	\begin{equation}
-		\|\nabla \mathcal{L}(x) - \nabla \mathcal{L}(y)\| \leq K \|x - y\|.
-	\end{equation}
-\end{enumerate}
-
-% Proof
-The theorem shows that if the model does not converge to the minimum, then it will reach a critical zone bounding the loss gradient norm as follows:
+Under the assumptions that $\mathcal{L}$ is convex and $\nabla \mathcal{L}$ is Lipschitz continuous with constant $K$ such that $K < 1/\eta$:
 \begin{equation}
-	\|\nabla \mathcal{L}(\theta)\| \leq \frac{4+3\sqrt{2}}{2^{p}} L \|\theta\|.
+\|\nabla \mathcal{L}(x) - \nabla \mathcal{L}(y)\| \leq K \|x - y\| \quad \forall x, y
 \end{equation}
-The constant $\frac{4+3\sqrt{2}}{2^{p}}$ is a conservative symbolic bound derived from solving a quadratic inequality to guarantee a decrease in gradient despite the noise introduced by a reduced precision.
-
-% Empirical Validation
-The authors from the original study empirically validate their theoretical model using a one-dimensional diffusion equation. They use a first-order finite difference method to estimate the Lipschitz constant at each iteration:
+the optimization is guaranteed to progress toward the minimum only as long as the gradient signal $\|\nabla \mathcal{L}(\theta)\|$ exceeds the rounding noise. The theorem shows that if the model does not converge to the minimum, then it will reach a critical zone bounding the loss gradient norm as follows:
 \begin{equation}
-	K \approx \frac{\|\nabla \mathcal{L}(\theta_{t+1}) - \nabla \mathcal{L}(\theta_t)\|}{\|\theta_{t+1} - \theta_t\|}.
+	\|\nabla \mathcal{L}(\theta)\| \leq \frac{4+3\sqrt{2}}{2^{p}} K \|\theta\|.
 \end{equation}
-
-% Relevance to our work
-Although Hayford et al. derived this theorem in the context of deep learning, the result applies more broadly to gradient descent-based optimization---including in ANTs registration. Our aim is to ensure convergence of the pipeline when using reduced-precision formats. By contraposition of Hayford's result, a sufficient condition to convergence is for the gradient norm to exceed the precision-dependent threshold:
+The constant $4+3\sqrt{2}$ is a symbolic bound derived from the quadratic inequality required to guarantee $\mathcal{L}(\theta_{t+1}) < \mathcal{L}(\theta_t)$. By taking the contrapositive, we establish a sufficient condition for convergence. To ensure the gradient signal is not masked by precision-induced noise, the precision $p$ must satisfy:
 \begin{equation}
-	\|\nabla \mathcal{L}(\theta)\| > \frac{4+3\sqrt{2}}{2^{p}} K \|\theta\|.
-	\label{eq:hayford-contraposition}
+p > p_{min} = \log_2 \left( \frac{(4+3\sqrt{2}) K |\theta|}{|\nabla\mathcal{L}(\theta)|} \right)
+\label{eq:pmin}
 \end{equation}
-
-% p_min
-It follows that:
+where $p_{min}$ is the minimum number of mantissa bits required at any given iteration. We modified ITK to probe $K$, $\|\nabla \mathcal{L}\|$, and $\|\theta\|$ at each iteration. As in the original study, $K$ was estimated using a first-order finite difference:
 \begin{equation}
-    p > p_{min} = \log_2 \left( \frac{4+3\sqrt{2}}{\|\nabla\mathcal{L}(\theta)\|} K \|\theta\| \right)
-	\label{eq:pmin}
+K \approx \frac{|\nabla \mathcal{L}(\theta_{t+1}) - \nabla \mathcal{L}(\theta_t)|}{|\theta_{t+1} - \theta_t|}
 \end{equation}
-
-where $p_{min}$ is the minimum precision required to guarantee convergence.
-
-We modified the ITK library to probe the Lipschitz constant, loss gradient norm, and parameter norm at each iteration of the ANTs registration pipeline. We used the probed values to compute the theoretical minimum precision ($p_{min}$) per iteration, using Equation~\ref{eq:pmin}.
-
-% \section{Experiments}
-% \label{sec:experiments}
-
-\subsection{Dataset}
-We utilized the BMB\_1 site from the CoRR dataset~\cite{TODO} to tune and evaluate our method ($N$=50; age: 30.8 [19.9--59.7]; 52\% F). We processed the anatomical T1-weighted volumes, performing skull-stripping via the antsBrainExtraction.sh script~\cite{TODO}. Brain-extracted volumes were visually quality-controlled against the TemplateFlow tpl-MNI152NLin2009cAsym template~\cite{TODO}.
+By computing Equation~\ref{eq:pmin} dynamically, we determine the minimum precision per iterations necessary to maintain the accuracy of the ANTs registration optimization.
 
 \subsection{Emperical and Esimated Computation}
-% TODO Debug LaTeX compilation error in this section
-% In our theoretical model, we report the empirical $p_{min}$ estimated from our VPREC experiments with varying relative difference thresholds with FP64: $10^{-2}$, $5\times10^{-3}$, $10^{-3}$, $10^{-4}$, and $10^{-5}$. To compute the estimate $p_{min}$ per iteration, for each threshold, we: first compute the relative difference between between each VPREC range-exponent combination and FP64 for each subject, second average across subject, third filter for combination where the last iteration is below the given thresholds, and last select the minimum precision among the filtered combination. Therefore, the $p_{min}$ value is monotically increasing with iterations.
+The empirical $p_{min}$ was estimated by evaluating VPREC results against the $FP64$ baseline across relative difference thresholds ($10^{-2}$ to $10^{-5}$). For each threshold, we averaged results across all subjects and identified the minimum bit-depth $p$ that maintained the final iteration error within the specified tolerance.
 
-\subsection{Infrastructure}
-We ran our experiments on the \textit{Rorqual} cluster from the Digital Research Alliance of Canada. To enhance reproducibility and HPC support, we containerized all pipeline versions using Docker and converted them to Apptainer images using Docker2Singularity.
-
-To ensure reproducibility across different systems, we disabled architecture-specific instructions when compiling ITK and ANTs with Verificarlo.
-
+\subsection{Dataset and Infrastructure}
+We used the $BMB\_1$ site from the $CoRR$ dataset~\cite{Zuo2014-ub} ($N=50$; mean age: $30.8$ [19.9--59.7]; $52\%$ female). Anatomical $T1$-weighted volumes were skull-stripped via the antsBrainExtraction.sh script~\cite{TODO} and quality-controlled against the \textit{tpl-MNI152NLin2009cAsym} template~\cite{TODO}. Experiments were executed on the Rorqual cluster of the Digital Research Alliance of Canada using containerized Apptainer images with architecture-specific instructions disabled to ensure reproducibility across CPU microarchitectures.
 
 \section{Results}
 \label{sec:results}
