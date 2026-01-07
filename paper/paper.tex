@@ -70,7 +70,7 @@ Reduced precision arithmetic leverages a mix of high- and low-precision data for
 % Mixed precision overview
 % 1. Deep learning
 % 2. On GPU
-\MD{TODO: Literature review on mixed precision.}
+\MD{TODO: Literature review on mixed precision??}
 
 While mixed precision has the potential for large performance gains, determining the appropriate precision either spatially, temporally, or both, is challenging is complex application. In this work, we limit our scope to reduced precision---where the application uses the same data format throughout---to evaluate its impact on ANTs registration. We conduct a detailed analysis of reduced precision formats in the context of ANTs registration pipeline~\cite{TODO}. This work contributes to the understanding and application of reduced precision formats in MRI registration by doing the following:
 \begin{itemize}
@@ -79,7 +79,6 @@ While mixed precision has the potential for large performance gains, determining
 \end{itemize}
 
 We organize the remaining of this paper as follows. Section~\ref{sec:background} introduce the concept used to build our methods and discusses related work on reduced precision computation and deep learning quantization. Section~\ref{sec:method} describes the ANTs registration pipeline, our empirical experiments using VPREC to simulate arbitrary data formats, and our theoretical analysis of minimum precision. Finally, we report and discuss our results in Section~\ref{sec:results} and Section~\ref{sec:discussion}, respectively. Section~\ref{sec:conclusion} concludes the paper.
-
 
 \section{Background}
 \label{sec:background}
@@ -101,16 +100,15 @@ The key advantage of simulating reduced precision is the low implementation cost
 \subsection{Numerical Stability of ANTs Registration??}
 % Niusha's work on numerical stability of ANTs registration (Linear only)
 
-
 \section{Method}
 \label{sec:method}
 \subsection{ANTs Registration SyN}
-The ANTs registration framework~\cite{Avants2020-xx} is a multi-stage, multi-resolution iterative optimization pipeline that aligns a moving image to a fixed template. The default configuration consists of three sequential stages---rigid, affine, and symmetric normalization (SyN)~\cite{Avants2008-ea}---each operating across four resolution levels. These levels use a shrink factors of $8 \times 4 \times 2 \times 1$ with corresponding Gaussian smoothing kernels of $3\times2\times1\times0$, respectively. Prior to optimization, the images are aligned via an initial intensity-based center-of-mass transformation.
+The ANTs registration framework~\cite{Avants2020-xx} is a multi-stage, multi-resolution iterative optimization pipeline that aligns a moving image to a fixed template. The default configuration consists of three sequential stages---rigid, affine, and symmetric normalization (SyN)~\cite{Avants2008-ea}---each operating across four resolution levels. These levels use a shrink factors of $8\times4\times2\times1$ with corresponding Gaussian smoothing kernels of $3\times2\times1\times0$, respectively. Prior to optimization, the images are aligned via an initial intensity-based center-of-mass transformation.
 
-The rigid and affine stages utilize mutual information (MI) as the objective function, while the SyN stage uses cross-correlation (CC). Images are smoothed prior to down-sampling at each level. The process terminates when the optimization reaches the maximum number of iterations or when the objective function converges within a threshold of $1 \times 10^{-6}$ over the last $10$ iterations. ANTs leverages the registration framework from the Insight Toolkit (ITK)~\cite{Yoo2002-ve, McCormick2014-ok} for computation.
+The rigid and affine stages utilize mutual information (MI) as the objective function, while the SyN stage uses cross-correlation (CC). Images are smoothed prior to down-sampling at each level. The process terminates when the optimization reaches the maximum number of iterations or when the objective function converges within a threshold of $10^{-6}$ over the last 10 iterations. ANTs leverages the registration framework from the Insight Toolkit (ITK)~\cite{Yoo2002-ve, McCormick2014-ok} for computation.
 
 \subsection{Reduced Precision using VPREC}
-Although ANTs provides a flag to enable single-precision computation, our previous study~\cite{Dugre2025-fs} identified a bug in ITK\footnote{https://github.com/InsightSoftwareConsortium/ITK/issues/4593} where interpolation operations execute in double precision ($FP64$) regardless of compilation or runtime settings. This results in casting overhead that degrades performance compared to the native $FP64$ pipeline. To explore the impact of reduced precision without these inefficiencies, we used Verificarlo with the VPREC backend to simulate specific bit-widths via compile-time instrumentation. We evaluated combinations of exponent ranges ($6$--$8$ bits) and mantissa precision ($6$--$23$ bits) against the default $FP64$ baseline.
+Although ANTs provides a flag to enable single-precision computation, our previous study~\cite{Dugre2025-fs} identified a bug in ITK\footnote{https://github.com/InsightSoftwareConsortium/ITK/issues/4593} where interpolation operations execute in double precision (FP64) regardless of compilation or runtime settings. This results in casting overhead that degrades performance compared to the native FP64 pipeline. To explore the impact of reduced precision without these inefficiencies, we used Verificarlo with the VPREC backend to simulate specific bit-widths via compile-time instrumentation. We evaluated combinations of exponent ranges (6--8 bits) and mantissa precision (6--23 bits) against the default FP64 baseline.
 
 We hypothesized that precision requirements vary by stage: failures in early alignment may propagate, while high-resolution stages likely necessitate finer precision to ensure convergence. Consequently, we tested precision reduction across various stage combinations as detailed in Table~\ref{tab:vprec_combinations}. We recompiled ANTs\footnote{https://github.com/mathdugre/ANTs/tree/paper-base-vprec} and ITK with Verificarlo for runtime simulation. Instrumentation was disabled for metric computation modules, as low-precision noise in these components caused the pipeline to crash due to values deviating from the expected convergence range.
 
@@ -128,7 +126,7 @@ We hypothesized that precision requirements vary by stage: failures in early ali
     0100 & 0  & 1  & 0 & 0 \\
     \bottomrule
     \end{tabular}
-    \caption{Experiment variations of original and VPREC-instrumented stages. We encode the experiment ID as a four digit binary sequence where 0 indicates default precision (FP64) and 1 indicates reduced precision at each stage: (1) initialization, (2) rigid, (3) affine, (4) SyN.}
+    \caption{Configuration of Stage-Specific Precision Reduction. Experiment IDs are encoded as a four-digit binary sequence where 0 represents default FP64 precision and 1 represents VPREC-instrumented reduced precision. The digits correspond to the following pipeline stages: (1) initialization, (2) rigid, (3) affine, and (4) SyN.}
     \label{tab:vprec_combinations}
 \end{table}
 
@@ -169,9 +167,10 @@ We used the $BMB\_1$ site from the $CoRR$ dataset~\cite{Zuo2014-ub} ($N=50$; mea
 \section{Results}
 \label{sec:results}
 
-\subsection{FP32 is Sufficient for ANTs Relative Registration}
-Figure~\ref{fig:ants-space-search} depicts the relative difference in similarity metrics compared to FP64 across the combinations of exponent range and precision.
+\subsection{FP32 Provides Sufficient Accuracy for ANTs Registration}
+We evaluated the impact of reduced precision by measuring the relative difference in similarity metrics compared to the FP64 baseline. Fig.~\ref{fig:ants-space-search} illustrates these differences across combinations of exponent range and mantissa precision.
 
+Certain redundant configurations for the Affine and SyN stages are omitted from the visualization, as the numerical behaviors remained consistent across all stages of the same type when identical instrumentation was applied.
 \begin{figure*}[htb!]
 	\centering
     \begin{subfigure}[t]{\textwidth}
@@ -189,22 +188,21 @@ Figure~\ref{fig:ants-space-search} depicts the relative difference in similarity
 		\label{subfig:ants-search-0001}
 		\includegraphics[width=\textwidth]{figures/0001-syn-metric_rel_diff-mean.pdf}
 	\end{subfigure}
-	\caption{No instrumentation in prior stages. The figure shows the relative difference in the similarity metric with respect to FP64---red is worse, green is better, and white denotes equivalence---with the color intensity representing the magnitude of the relative difference. We report the mean and standard deviation across subjects ($N=50$). We highlight data formats with hardware support: Float32~(r8-p23), Float24~(r7-p16), TensorFloat32~(r8-p10), and BFloat16~(r8-p7). The 4-bit binary encoding indicates whether we applied reduced precision at each stage: (1) initialization, (2) rigid, (3) affine, (4) SyN.}
+	\caption{
+	Mean relative difference in similarity metrics compared to the FP64 baseline across varied exponent and mantissa configurations ($N=50$). Subfigures (a)--(c) represent the rigid, affine, and SyN stages, respectively, without instrumentation in preceding stages. Heatmap colors indicate performance relative to FP64: red denotes degradation, green denotes improvement, and white indicates numerical equivalence, with the color intensity representing the magnitude of the relative difference. Formats with hardware support are highlighted: Float32 (r8-p23), Float24 (r7-p16), TensorFloat32 (r8-p10), and BFloat16 (r8-p7). The 4-bit binary ID encodes instrumentation (1), default precision (0), or not executed (x) for: (1) initialization, (2) rigid, (3) affine, and (4) SyN stages.}
 	\label{fig:ants-space-search}
 \end{figure*}
 
-Overall our results indicate that using low-precision formats such as FP24 (r7-p16) and FP32 (r8-p23) has no significant impact on the accuracy of the registration---with a relative difference remaining below $10^{-5}$ for both formats. To remain within a relative difference threshold of $10^{-4}$ compared to FP64, the rigid and affine stages require at least 11 bits of precision, while the SyN stage requires at least 13 bits of precision---a much lower requirement than the default of 53-bit precision in FP64. 
+Our results indicate that low-precision formats, such as FP32 (r8-p23) and FP24 (r7-p16), maintain high numerical integrity, with relative differences remaining below $10^{-5}$ compared to FP64. To achieve a relative difference threshold of $10^{-4}$, the rigid and affine stages require a minimum of 11 bits of precision, while the SyN stage necessitates at least 13 bits. These requirements are significantly lower than the 53 bits provided by FP64.
 
-Our results show no observable differences between exponent ranges of 7 and 8 bits. However, lowering the exponent range to 6 bits causes the application to crash or become unresponsive. Similarly, using 6-bit precision causes the pipeline to hang, regardless of the range. These behaviors appear across all stages and subjects.
+We observed no significant performance variance between exponent ranges of 7 and 8 bits. However, reducing either the exponent range or the mantissa precision to 6 bits caused the pipeline to either crash or hang across all subjects and stages. This suggests a critical numerical floor required for the stability of ITK-based optimization branches.
 
-We omit some configurations for the SyN and Affine stages, since the observed behaviors are consistent across all stages of a same type as long as the instrumentation of the stage remains the same.
+\subsection{Current Stage Precision Primarily Dictates Final Registration Accuracy}
+Table~\ref{tab:stage-accuracy} illustrates how precision at different stages of the pipeline affects the final similarity metric. We specifically examined the BF16 format to observe how errors propagate from the initial rigid alignment through to the final SyN stage.
 
-% Our theoretical analysis in Section~\ref{sec:rp-theoretical-analysis} shows that the convergence of ANTs is mostly unaffected by FP32 and FP24 formats, while TF32 and BF16 formats have no convergence guarantee. Our empirical results (Figure~\ref{subfig:ants-0111}) align with this analysis; we observe no significant difference in the similarity metric when using FP32 and FP24 formats, while TF32 and BF16 formats show a significant degradation in the similarity metric.
+When the rigid, affine, and SyN stages were all instrumented in BF16 (Exp. ID $0111$), the accuracy degraded progressively, resulting in a final mean relative difference of $8.68\%$. However, when the SyN stage was reverted to FP64 while maintaining BF16 for all prior stages (Exp. ID $0110$), the accuracy recovered significantly. In this configuration, the final similarity metric was $0.54\%$ better than the FP64 baseline, despite the low-precision initialization.
 
-
-\subsection{Current Stage Precision Dictates Accuracy}
-Table ~\ref{tab:stage-accuracy} depicts the relative difference in accuracy of the SyN stage with and without instrumentation in BF16. The prior stages are all instrumented using BF16, leaving only the SyN stage to compare. Our results show a degradation in accuracy during the instrumented rigid and affine stage. This degradation is continued during the instrumented SyN stage, leading to a final relative difference of 8.68\% (average across subjects). However, for the non-instrumented version of the SyN stage, we observe accuracy recovery, even obtaining 0.54\% better similarity relative to FP64. This pattern is observed in other stages, independently of the prior stage instrumentation. Therefore, it suggests that only the instrumentation of the current stage is pertinent to the final similarity metric.
-
+This ``accuracy recovery'' demonstrates that the numerical errors introduced in early stages are not additive; instead, the final registration accuracy is governed by the precision of the active stage rather than the cumulative error propagated from preceding steps.
 
 % Exception for the initialization step
 \newcommand{\RedHL}[1]{\cellcolor[HTML]{FD6864}{\color[HTML]{333333} #1}}
@@ -217,71 +215,37 @@ Table ~\ref{tab:stage-accuracy} depicts the relative difference in accuracy of t
 {\uline{011}\textbf{1}} & \RedHL{2.34e-02} & \RedHL{1.86e-01} & \RedHL{8.68e-02} \\
 {\uline{011}\textbf{0}} & \RedHL{2.34e-02} & \RedHL{1.86e-01} & \GreenHL{-5.38e-03} \\ \bottomrule
 \end{tabular}
-\caption{Relative difference between \textbf{BF16} and FP64 for instrumented vs. non-instrument SyN stage. The prior rigid and affine stages are instrument with the same precision. We denote the Experiment ID as 0 (non-instrumented) and 1 (instrumented) for each stage. Green highlight indicates better performance with BF16 compared to FP64, while red is worse.}
+\caption{Impact of Stage-Specific Instrumentation on Final Registration Accuracy (BF16 vs. FP64). The experiment IDs indicate whether the current and prior stages are instrumented (1) or maintained at default precision (0)---only the SyN stage is varied in these experiments. Red and green highlights indicate worse and better similarity relative to FP64, respectively.}
 \label{tab:stage-accuracy}
 \end{table}
 
-\subsection{$p_{min}$ Prediction and VPREC Estimation}
-% TODO: This might be a bit repetitive with the method section on metric computation
-Figure~\ref{fig:ants-pmin-ovserview} compares our $p_{min}$ prediction with the empirical results obtained using VPREC. For VPREC, we define $p_{min}$ by: (1) computing the relative metric difference of each data format with FP64, (2) compute the mean across subjects, (3) select the formats with average relative difference below the given threshold, and (4) select the minimum precision among those formats. By contstruction, the VPREC is monitonically increasing with iterations.
+\subsection{Theoretical $p_{min}$ Yields Conservative Estimates for Convergence}
+We compared the theoretically predicted $p_{min}$ via Equation~\ref{eq:pmin} with empirical VPREC estimations. The empirical $p_{min}$ represents the minimum precision required to maintain the mean relative metric difference below specific thresholds ($10^{-2}$ to $10^{-5}$).
+\MD{could mention that VPREC pmin is monotonic increasing with iterations?}
 
+As shown in Fig.~\ref{fig:ants-pmin-overview}, the predicted $p_{min}$ (dash line) generally acts as a conservative upper bound for the empirical thresholds, indicating that the predicted number of bits is sufficient for convergence. In the rigid and affine stages, $p_{min}$ typically remains below the 23 bits provided by FP32, while the requirements for the SyN stage are generally lower---typically below 15 bits (provided by FP24). However, we observed that the model occasionally underestimates the precision required for SyN levels 1 and 2.
 \begin{figure*}[htb!]
 	\centering
 	\includegraphics[width=\textwidth]{figures/pmin-threshold-last-iteration/pmin-overview.pdf}
-	\caption{$p_{min}$ prediction (dotted line) and VPREC estimation (solid colored lines). We report the average across subjects (N=50) per iteration. The different VPREC estimation represent the following relative difference thresholds: 1e-02 (1\%; blue), 5e-3 (0.5\%; orange), 1e-3 (0.1\%; green), and 1e-4 (0.01\%; magenta). For each threshold, we report its value (T), the area ratio percent where the our prediction is under (U) and over (O) the VPREC threshold curve. We highlight precision with hardware support as solid lightgreay horizontal lines.}
+	\caption{
+		Comparison of theoretically predicted $p_{min}$ (dashed line) and empirical VPREC estimations (solid lines). Values represent the mean precision bits required across subjects ($N=50$) at each iteration. VPREC curves indicate the precision necessary to maintain relative difference thresholds ($T$) from $10^{-2}$ to $10^{-4}$. Metrics $U$ (Under) and $O$ (Over) denote the area ratio percentages where the theoretical model underestimates or overestimates the empirical requirement, respectively. Horizontal light gray lines indicate precision bits for standard floating-point hardware formats.}
 	\label{fig:ants-pmin-overview}
 \end{figure*}
 
-% TODO descrive the precision requirements from the esimated pmin.
-
-
-In Figure~\ref{fig:ants-pmin-overview}, overall, our predicted $p_{min}$ (dash line) remain above the VPREC thresholds, except for the SyN levels 1 and 2. This indicates that the number of predicted bits is sufficient for convergence. 
-
-Table~\ref{tab:area-ratio-summary} summarize the area ratio percent above and below the VPREC thresholds across all stages. For a relative difference of 1e-3 (0.1\%), our model underestimate the required number of bits by 11.57\% on average. However, we observed a large standard deviation across all values, indicating that our model accuracy varies significantly across stage-level combinations. Overall, our model overestimates significantly than it underestimates.
-
+Table~\ref{tab:area-ratio-summary} summarizes the area ratio percent where our prediction is above (overestimation) or below (underestimation) the VPREC thresholds across all stages. For a relative difference of $10^{-3}$ ($0.1\%$), our model underestimates the required precision by $11.57\%$ on average. Conversely, it overestimates by $34.57\%$, providing a safety margin that ensures the convergence guarantee in the majority of stage-level combinations. We observed a large standard deviation across these values, indicating that model accuracy varies significantly across specific stage-level combinations.
 \begin{table}[htb!]
 \centering
 \begin{tabular}{@{}lll@{}}
 \toprule
 \multicolumn{1}{c}{\textbf{Threshold}} & \multicolumn{1}{c}{\textbf{Under}} & \multicolumn{1}{c}{\textbf{Over}} \\ \midrule
-1e-2 & $6.15\pm6.90$ & $50.59\pm43.58$ \\
-5e-3 & $7.41\pm7.03$ & $43.32\pm35.24$ \\
-1e-3 & $11.57\pm9.75$ & $34.57\pm30.70$ \\
-1e-4 & $16.79\pm11.40$ & $26.03\pm22.61$ \\ \bottomrule
+$1\times10^{-2}$ & $6.15\pm6.90$ & $50.59\pm43.58$ \\
+$5\times10^{-3}$ & $7.41\pm7.03$ & $43.32\pm35.24$ \\
+$1\times10^{-3}$ & $11.57\pm9.75$ & $34.57\pm30.70$ \\
+$1\times10^{-4}$ & $16.79\pm11.40$ & $26.03\pm22.61$ \\ \bottomrule
 \end{tabular}
-\caption{Summary of the area ratio between our prediction curve and the different threshold curves, indicating when our prediction under (or over) estimated the number of precision required for convergence. We report the mean and standard deviation across all stage-level combinations.}
+\caption{Summary of Prediction Accuracy via Area Ratio Analysis. Values represent the mean and standard deviation $(\mu \pm \sigma)$ of the area where the theoretical $p_{min}$ underestimates (Under) or overestimates (Over) the empirical VPREC thresholds across all stage-level combinations. A larger "Over" ratio signifies a conservative safety margin for convergence, while a smaller "Under" ratio indicates occasional underestimation of required precision.}
 \label{tab:area-ratio-summary}
 \end{table}
-
-% remain below the precision provided by FP24 (16 bits), except for the first two rigid levels requiring up to 21 bits of precision. The rigid and affine stages exhibit similar $p_{min}$ requirements~($<$21), while the SyN stage is lower~($<$15).
-
-% The required precision tends to increase with iterations, but remains similar across resolution levels within each stage. However, the precision in the earlier resolution levels (i.e., 1-2) tends to vary more. In contrast, the precision in the last two resolution levels (i.e., 3-4) is stable. Moreover, the last two levels tend to require lower precision than the first two levels.
-
-% In early iterations ($<$10), our estimated $p_{min}$ values are consistently lower than those observed with VPREC. Our estimated $p_{min}$ values tends to be over the VPREC-observed values, providing a conservative estimate of the minimum precision required for convergence. For the SyN stage, our estimates align well with the VPREC results in level 1 and 4, but underestimate the precision required in levels 2 and 3.
-
-% Our estimates show some steep spikes at certain iterations, particularly in the affine stage. In contrast, the VPREC results are stable across iterations.
-
-
-% \subsection{Estimating theoretical bounds on ANTs convergence}
-% Figure~\ref{fig:ants-pmin-min-max} shows the minimum data format precision required for ANTs to converge at each iteration. We compute $p_{min}$ using Equation~\ref{eq:hayford-pmin}. Our results indicate that the convergence of ANTs is mostly unaffected when using FP32 format, with only a minimal set of iterations lacking convergence guarantee. This suggests that FP32 could be used across the entire ANTs pipeline without loss in accuracy,resulting in significant speed up.
-
-% The FP24 format exhibits lower convergence guarantee in the affine stage---level one, two, and three---especially for the last. The last rigid level show similar effect. By consequence, the format may be used to accelerate some registration stages---such as, rigid level 0, 1, and 2, and affine level 0---but may result in accuracy degradation when used across the entire pipeline.
-
-% Using TF32 or BF16 provide no guarantee on the convergence of ANTs, across all stages and resolution levels. Thus, those data formats are not suitable to accelerate registration stages. However, future work could explore leveraging TF32 or BF16 to speed up a subset of early iterations within each stages, where the formats still guarantee convergence at those iterations.
-
-% % TODO CLEANUP Only makes sense to keep if we want to discuss the boundaries in depth. However, the overview figure can include teh boundaries as well.
-
-% % \begin{figure*}[htb!]
-% % 	\centering
-% % 	\includegraphics[width=\textwidth]{figures/pmin-min-max.pdf}
-% % 	\caption{Estimated $p_{min}$ value computed as the average across subjects (N=50) per iteration. The min-max boundaries are depicted as shaded regions. We highlight precision with hardware support as dotted horizontal lines.}
-% % 	\label{fig:ants-pmin-min-max}
-% % \end{figure*}
-
-% The current modification we made to ITK and the ANTs pipeline allow us to estimate a Lipschitz constant, loss gradient norm, and parameter norm at each iteration. While our modification works well for the rigid and affine stages, it fails to probe the SyN stage, which always returns a value of zero for the parameters norm. This is likely due to the different algorithm in SyN stage, which computes a displacement vector at each voxel rather than a transformation matrix. We plan to further investigate this issue and adapt our probing method to work with the SyN stage.
-
-% Our current estimation of $p_{min}$ is based on a single subject. In future work, we plan to use an aggregation across all subjects to improve the estimation.
-
 
 \section{Discussion}
 \label{sec:discussion}
@@ -309,7 +273,6 @@ While we compare our model against multiple accuracy thresholds, these remains f
 
 \subsection{Model Under and Over Prediction}
 Our theoretical model is unlikely to predict the exact bit requirements at each iteration. On the one hand, over predictions preserve the convergence guarantee, but limit the potential speed up from lower bit formats. On the other hand, underprediction risk converge problem, by aggressively reducing the bit used.
-
 
 \section{Conclusion}
 \label{sec:conclusion}
