@@ -7,7 +7,7 @@
 \usepackage{textcomp}
 \usepackage{booktabs}
 \usepackage[normalem]{ulem}
-\usepackage[table,xcdraw]{xcolor}
+\usepackage{colortbl}
 \usepackage{hyperref}
 \hypersetup{
     colorlinks,
@@ -205,15 +205,15 @@ When the rigid, affine, and SyN stages were all instrumented in BF16 (Exp. ID $0
 This ``accuracy recovery'' demonstrates that the numerical errors introduced in early stages are not additive; instead, the final registration accuracy is governed by the precision of the active stage rather than the cumulative error propagated from preceding steps.
 
 % Exception for the initialization step
-\newcommand{\RedHL}[1]{\cellcolor[HTML]{FD6864}{\color[HTML]{333333} #1}}
-\newcommand{\GreenHL}[1]{\cellcolor[HTML]{67FD9A}{\color[HTML]{333333} #1}}
+\definecolor{RedHL}{RGB}{253, 104, 100}
+\definecolor{GreenHL}{RGB}{103, 253, 154}
 \begin{table}[htb!]
 \centering
 \begin{tabular}{@{}llll@{}}
 \toprule
 \multicolumn{1}{c}{\textbf{Exp. ID}} & \multicolumn{1}{c}{\textbf{Rigid (MI)}} & \multicolumn{1}{c}{\textbf{Affine (MI)}} & \multicolumn{1}{c}{\textbf{SyN (CC)}} \\ \midrule
-{\uline{011}\textbf{1}} & \RedHL{2.34e-02} & \RedHL{1.86e-01} & \RedHL{8.68e-02} \\
-{\uline{011}\textbf{0}} & \RedHL{2.34e-02} & \RedHL{1.86e-01} & \GreenHL{-5.38e-03} \\ \bottomrule
+{\uline{011}\textbf{1}} & \cellcolor{RedHL}{2.34e-02} & \cellcolor{RedHL}{1.86e-01} & \cellcolor{RedHL}{8.68e-02} \\
+{\uline{011}\textbf{0}} & \cellcolor{RedHL}{2.34e-02} & \cellcolor{RedHL}{1.86e-01} & \cellcolor{GreenHL}{-5.38e-03} \\ \bottomrule
 \end{tabular}
 \caption{Impact of Stage-Specific Instrumentation on Final Registration Accuracy (BF16 vs. FP64). The experiment IDs indicate whether the current and prior stages are instrumented (1) or maintained at default precision (0)---only the SyN stage is varied in these experiments. Red and green highlights indicate worse and better similarity relative to FP64, respectively.}
 \label{tab:stage-accuracy}
