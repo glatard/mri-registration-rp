@@ -31,7 +31,7 @@
 \markboth{\journalname, VOL. XX, NO. XX, XXXX 2020}
 {Author \MakeLowercase{\textit{et al.}}: Preparation of Papers for IEEE TRANSACTIONS ON MEDICAL IMAGING}
 \begin{document}
-\title{An Evaluation of Low Precision Computation in ANTs Registration}
+\title{An Evaluation of Mixed Precision Arithmetic in ANTs Registration}
 \author{Dugr\'e Mathieu, Chatelain Yohan, and Glatard Tristan
 \thanks{This paragraph of the first footnote will contain the date on which
 you submitted your paper for review. It will also contain support information,
@@ -249,30 +249,30 @@ $1\times10^{-4}$ & $16.79\pm11.40$ & $26.03\pm22.61$ \\ \bottomrule
 
 \section{Discussion}
 \label{sec:discussion}
-\subsection{Catastrophic Failure with Low Precision}
-Preliminary results showed that using low precision (less than 14 bits) for the initial alignment often caused unrecoverable registration failures, resulting in large missing brain chunks. Consequently, we included only the \textit{1111} configuration—where all stages run in reduced precision—to evaluate this scenario explicitly.
+\subsection{Numerical Stability and Convergence Floors}
+Our results establish a ``numerical floor'' for the ANTs and ITK frameworks. While formats such as Float24 (r7-p16) maintain high numerical integrity, reducing the representation to 6 bits or fewer in either the exponent or mantissa consistently led to execution instabilities, including segmentation faults or indefinite hangs. Given the complex, multi-branched architecture of the ITK-based optimization pipeline, we attribute these failures to numerical noise triggering divergent execution paths or the failure to satisfy convergence thresholds, leading to unexpected execution states.
 
-We reduced the exponent and range down to 7 bits each (inclusively) as using 6 bits or less was resulting in the application crashing or hanging indefinitely. This is likely due to ITK not expected such low data format, which could result in the application following a different execution branch or failing to meeting a threshold during an iterative process.
+Furthermore, the ``catastrophic failures'' observed during low-precision initialization (Exp. 1111) underscore the sensitivity of the initial global alignment. Because initialization defines the search space for all subsequent stages, rounding errors at this stage are particularly detrimental; at very low mantissa precision, these errors resulted in severe topological discontinuities and loss of anatomical structures in the transformed volumes. This suggests that while later stages exhibit a degree of resilience to numerical noise, the center-of-mass alignment must be preserved at higher precision to ensure a stable registration.
 
-\subsection{Theorem Assumptions}
-The theorem from Hayford et al.~\cite{Hayford2024-kb} requires for the loss function to be convex. This is unlikely for complex real-world problem and is difficult to evaluate in practice. Our results showcase that although this assumption is likely unmet in ANTs registration, we can still leverage this simple model to accuratly predict the precision bits required for convergence. However, this is likely application specific, and further research could investigate the model on a collection of application to assess whether this assumption can be relaxed in practice.
-
-\subsection{Performance Opportunity from $p_{min}$ Estimation}
-Our current experiments incur large computational cost from simulating precison of each range-precision combination with VPREC. Leveraging our theoretical model to predict $p_{min}$ and subsequentially modify the precision during runtime would allow precision tuning without repeated execution, therefore enabling practical use of mixed precision in ANTs.
+\subsection{Theoretical Assumptions and Practical Robustness}
+The theoretical model adapted from Hayford et al.~\cite{Hayford2024-kb} relies on the assumption of loss function convexity. In the context of medical image registration, particularly with high-precision 3D MRI volumes and complex metrics like Cross-Correlation (CC), the convexity of the cost function is challenging to determine and likely non-convex. Despite this theoretical mismatch, our results demonstrate that the $p_{min}$ model (Eq.~\ref{eq:pmin}) remains an effective heuristic for predicting precision requirements. However, this is likely application-specific, and further research should investigate the model on a collection of applications to assess whether this assumption can be relaxed in practice.
 
 \subsection{Norm Choice}
-We used the two-norm across all of our computations, consistant with the approach in~\cite{Hayford2024-kb}. While this ensure methodological alignment, we acknowledge that the norm two does not account for the different units and variability from our transformation parameters. Thus, we plan to investigate the impact from using a Mahalanobis norm that accounts for parameters scaling in future work.
+We used the $L_2$ norm across all of our computations, consistent with the approach in Hayford et al.~\cite{Hayford2024-kb}. While this ensures methodological alignment, we acknowledge that the $L_2$ norm does not account for the different units and variability of our transformation parameters. Thus, future work should investigate the impact of using different norms, such as Mahalanobis norm, which would better account for parameter scaling.
 
-\subsection{Mixed Precision Granularity}
-Our results highlight significant potential benefits from using mixed precision at a stage-level granularity. However, even further performance gains could be obtained by leveraging mixed precision at a finer level---e.g., by varying precision per iteration (temporally) or code section (spatially). However, fine-grain mixed precision is challenging. First, casting overhead from frequent oscillation between data format would instead result in performance degradation. Second, implementing fine-grain tuning of precision remains technically challenging in large or complex codebase. 
+\subsection{Defining Accuracy Thresholds}
+While we compare our model against multiple accuracy thresholds, these remain fairly application-specific. Future work could focus on a broader collection of analyses to study the impact of reduced precision on actual clinical outcomes, such as segmentation accuracy or diagnostic reliability.
 
-A first avenue would be to implement our theoretical model in practice by inject the precision requirement at runtime. Additionally, our current experiments perform the similarity metric computation in double precision, to avoid runtime convergence issues. As implementing varying the ITK precision spatial would be technically chanlleging and may results in casting overhead, future work should investigate methods to compute the similarity metric at the same precision as other operation of during each iteration.
+\subsection{Performance Opportunity from $p_{min}$ Estimation}
+Our current experiments incur a large computational cost by simulating each range-precision combination with VPREC. Utilizing our theoretical model to predict $p_{min}$---and subsequently modifying the precision during runtime---would allow for precision tuning without the need for repeated executions. This would enable the practical use of mixed precision in ANTs by allowing the framework to adapt its bit-width dynamically based on the specific requirements of each iteration.
 
-\subsection{Defining Accuracy Threshold}
-While we compare our model against multiple accuracy thresholds, these remains fairly application specific. Future work could focus on a collection of analysis and study the impact of applying reduced precision to the clinical outcomes.
+\subsection{Model Under- and Over-prediction}
+Our theoretical model is unlikely to predict the exact bit requirements for every iteration. On the one hand, over-prediction preserves the convergence guarantee but limits the potential speedup from lower-bit formats. On the other hand, under-prediction risks convergence problems by aggressively reducing the bit-width utilized. Balancing these factors is essential for maximizing performance without compromising numerical stability.
 
-\subsection{Model Under and Over Prediction}
-Our theoretical model is unlikely to predict the exact bit requirements at each iteration. On the one hand, over predictions preserve the convergence guarantee, but limit the potential speed up from lower bit formats. On the other hand, underprediction risk converge problem, by aggressively reducing the bit used.
+\subsection{Implementation of Mixed Precision}
+Our current experiments incur a large computational cost by simulating each range-precision combination with VPREC. Utilizing our theoretical model to predict $p_{min}$---and subsequently modifying the precision during runtime---would allow for precision tuning without the need for repeated executions. This capability shifts precision optimization from a costly offline simulation to a dynamic, runtime process, enabling the practical use of mixed precision in research and clinical environments. While our results highlight significant potential benefits from stage-level granularity, the model provides a pathway to even finer control, such as varying precision per iteration (temporally) or per code section (spatially).
+
+However, fine-grained mixed precision presents two primary technical challenges. First, the casting overhead from frequent oscillations between data formats could result in performance degradation rather than improvement. Second, implementing such tuning remains difficult within a large and complex codebase like ITK. A primary bottleneck in our current implementation is the similarity metric, which we perform in double precision (FP64) to ensure numerical stability and avoid convergence issues. Maintaining this high precision while other operations are reduced creates a potential bottleneck; yet, implementing spatially varying precision within ITK is architecturally complex. Therefore, future research should explore methods to align the precision of the similarity metric with the rest of the optimization pipeline. This would allow the entire iteration to execute at a consistent bit-width, simplifying the implementation and increasing performance gains.
 
 \section{Conclusion}
 \label{sec:conclusion}
