@@ -39,7 +39,7 @@ including sponsor and financial support acknowledgment. For example,
 ``This work was supported in part by the U.S. Department of Commerce under Grant BS123456.'' }
 \thanks{The next few paragraphs should contain the authors' current affiliations,
 including current address and e-mail. For example, F. A. Author is with the
-National Institute of Standards and Technology, Boulder, CO 80305 USA (e-mail:author@boulder.nist.gov). }
+Concordia University, Montreal, Quebec, Canada (e-mail:research@mathdugre.me). }
 \thanks{S. B. Author, Jr., was with Rice University, Houston, TX 77005 USA.
 He is now with the Department of Physics, Colorado State University,
 Fort Collins, CO 80523 USA (e-mail: author@lamar.colostate.edu).}
@@ -80,25 +80,34 @@ While mixed precision has the potential for large performance gains, determining
 
 We organize the remaining of this paper as follows. Section~\ref{sec:background} introduce the concept used to build our methods and discusses related work on reduced precision computation and deep learning quantization. Section~\ref{sec:method} describes the ANTs registration pipeline, our empirical experiments using VPREC to simulate arbitrary data formats, and our theoretical analysis of minimum precision. Finally, we report and discuss our results in Section~\ref{sec:results} and Section~\ref{sec:discussion}, respectively. Section~\ref{sec:conclusion} concludes the paper.
 
-\section{Background}
+\section{background}
 \label{sec:background}
-\subsection{Reduced Precision}
-Reduced precision arithmetic uses data formats with fewer bits---exponents, mantissa, or both---than standard formats such as FP64 and FP32.
-To further accelerate the runtime performance of applications, mixed precision computing varies the data formats used across the space or time of a program, enabling further precision tuning. While the \textit{binary64} (FP64) and \textit{binary32} (FP32) formats defined by the IEEE-754 standard~\cite{Zuras2008-eg} are ubiquitous, exploiting low-precision formats has the potential to accelerate applications. Several studies explored the use of low-precision data types to perform computations~\cite{Cherubin2020-tz}. The logic complexity of floating point units is near-proportional to the square of the bit width~\cite{Chen2018-ge}. Therefore, lowering the number of bits in a data format also reduces the die size of a chip, computation time, and the energy cost for arithmetic operations. Reduced and mixed precision computing improves runtime of application with a potential trade off in numerical accuracy.
 
-Popular DL frameworks such as TensorFlow~\cite{Abadi2016-vm} and PyTorch~\cite{Paszke2019-vk} provide mixed precision support via their API, which automatically casts the data types based on the operation performed and underlying hardware capabilities. Both frameworks support the \textit{binary32} (FP32) and \textit{binary16} (FP16), as well as the \textit{bfloat16} (BF16) format~\cite{Wang2019-qe}.
+\subsection{Reduced and Mixed Precision Arithmetic}
+The computation time of arithmetic operation is approximately quadratic with the bit width of the data format used~\cite{Wang2019-qe}. Therefore, enabling applications to use data format with lower bit width would have significant benefits on their performance. Pipeline developer traditionally used Float64 (FP64) and Float32 (FP32) to balance resources requirement and output accuracy. However, some applications do not necessitate the level of precision from these format---and could be accelerated using lower bit width formats. Reduced precision strategies use low bit width format to accelerate pipeline while maintaining accuracy within an acceptable threshold.
 
-\subsection{Simulation of Reduced Precision}
-Commodity hardware supports only a limited set of prevalent data formats---most commonly, FP64, FP32, FP16, and BF16. Designing custom hardware to support additional formats is expensive, especially when evaluating multiple alternatives. As a result, researchers often resort to simulating arbitrary precision formats to study their performance characteristics. For instance, Higham et al.~\cite{Higham2019-xu} implemented a reduced precision library in MATLAB, while Zhang et al.~\cite{Zhang2019-ry} developed a high-level framework on top of PyTorch to facilitate reduced precision techniques. Chatelain et al.~\cite{Chatelain2019-vw} explored the use of reduced precision to reduce communication costs in iterative methods. They used the VPREC backend in Verificarlo~\cite{Denis2015-zf} to simulate reduced precision, employing a heuristic to determine the minimum precision at different iterations. Using VPREC requires re-compiling the application with Verificarlo, but does not require inserting probes into the code. In this work, we leverage VPREC framework as it allows non-intrusive simulation of arbitrary precision formats in ANTs registration---only requiring recompilation of the source code.
+Similarly, mixed precision leverage a combination of high- and low-bit width arithmetic to further speedup computation compared to reduced precision methods. The different precision can be applied either across iterations (temporal) or code section (spatial). Mixed precision promise higher performance gains compared to reduced precision. However, its implementation in pipelines generally requires code modification, making it technically challenging.
 
-The key advantage of simulating reduced precision is the low implementation cost, as it eliminates the need for new hardware design. This allows researchers to explore many data formats with low effort. However, while simulation is useful for accuracy evaluation, assessing runtime performance remains a challenge requiring theoretical models. Simulating arbitrary precision formats incurs an overhead cost ranging from $2.6\times$ to $16.8\times$ slowdown for VPREC~\cite{Chatelain2019-vw}. By consequence, simulations motivate developing new hardware or software solutions, rather than as a means for performance optimization.
+Mixed precision has been successfully applied in deep learning (DL) models~\cite{TODO}, where low-precision formats such as BFloat16 (BF16) and Float16(FP16) are commonly used to accelerate training and inference of neural networks. DL frameworks such as PyTorch~\cite{Paszke2019-vk} and TensorFlow~\cite{Abadi2016-vm} provide built-in support for mixed precision via their API, allowing developers to easily leverage reduced precision formats  without extensive code modification. They automatically cast data types based on the operation performed and the underlying hardware capabilities. While this approach enables easy adoption of mixed precision, it is generally limited to a few hardware-supported formats. GPU support for mixed precision is generally limited to FP16 and BF16, with recent addition of TensorFloat32 (TF32) on NVIDIA Ampere architecture~\cite{Kharya2020-th}. Moreover, the adoption of reduced or mixed precision in classical pipelines remains limited, as they generally lack out-of-the-box support for mixed precision and often rely on FP64 by default.
 
+\subsection{Simulation of Arbitrary Precision}
+Commonly available hardware only support a small subset set of data format---typically among Float64, Float32, Float16, BFloat16, Float24, and TensorFloat32. Furthermore, Developing hardware standard for new data formats incurs extensive time and resources cost. Therefore, it is essential to understand what data format balances best the performance and accuracy of a given pipeline.
 
-\subsection{Quantization in Deep Learning}
+Theoretical analysis can be used to determine the exact precision required for a chain of arithmetic operations. However, the complexity of the analysis renders the process infeasible for large or complex pipelines.
 
+Dynamic analysis vary the precision of the pipeline across multiple execution and analyze the precision-accuracy trade-off. Tools such as Verificarlo's VPREC~\cite{Denis2015-zf,Chatelain2019-vw} backend provide runtime simulation of arbitrary precision in a pipeline, enabling dynamic analysis. VPREC is non-instrusive and only requires recompilation of the source code to instrument the pipeline with different precision at runtime.
 
-\subsection{Numerical Stability of ANTs Registration??}
-% Niusha's work on numerical stability of ANTs registration (Linear only)
+VPREC simulation of data formats is expensive, with an overhead of approximately $2.6\times$ to $16.8\times$.
+Therefore, VPREC should be used as a exploratory tool, but is not suited for production.
+
+\subsection{Numerical Sensitivity of MRI Registration}
+MRI registration is an iterative optimization process that aligns a moving image to a fixed template. In the ANTs framework, registration is performed via a multi-stage pipeline---Rigid, Affine, and Symmetric Normalization (SyN)---operating on a multi-resolution pyramid. Numerical errors in the initial coarse alignment can propagate and amplify in subsequent high-resolution stages.
+
+A study by Mirhakimi et al.~\cite{Mirhakimi2025-qb} found that numerical uncertainty in ANTs linear registration can result in mean displacement artifacts of up to 0.2mm within a subject---similar to the level of motion observed in typical MRI acquisitions. Futhermore, the choice of similarity metric significantly influences numerical stability, with Mutual Information (MI) exhibiting higher sensitivity compared to Cross-Correlation (CC). These findings underscore the importance of numerical stability in MRI registration, as even minor inaccuracies can lead to significant anatomical misalignments.
+
+Numerical stability in this context is not merely a matter of final error values but of anatomical integrity. Misalignments or topological distortions introduced by numerical inaccuracies can lead to erroneous clinical interpretations or flawed research conclusions. Therefore, balancing accuracy and performance in MRI registration is critical to ensure reliable outcomes.
+
+Accuracy threshold are application specific and not well defined. Determining these thresholds would require extensive empirical validation across diverse clinical scenarios. While critical to fully leverage reduced precision, it remains a challenge and is outside the scope of this work. 
 
 \section{Method}
 \label{sec:method}
@@ -259,6 +268,9 @@ The theoretical model adapted from Hayford et al.~\cite{Hayford2024-kb} relies o
 
 \subsection{Norm Choice}
 We used the $L_2$ norm across all of our computations, consistent with the approach in Hayford et al.~\cite{Hayford2024-kb}. While this ensures methodological alignment, we acknowledge that the $L_2$ norm does not account for the different units and variability of our transformation parameters. Thus, future work should investigate the impact of using different norms, such as Mahalanobis norm, which would better account for parameter scaling.
+
+\subsection{Similarity Metric Stability}
+Previous work by Mirhakimi et al.~\cite{Mirhakimi2025-qb} identified that the similarity metrics used in ANTs linear registration significantly influence numerical stability. In this work, we focus on the default parameters of ANTs, which utilize Mutual Information (MI) for rigid and affine stages and Cross-Correlation (CC) for the SyN stage. Future research should explore how varying similarity metrics impact the precision requirements and overall stability of the registration process.
 
 \subsection{Defining Accuracy Thresholds}
 While we compare our model against multiple accuracy thresholds, these remain fairly application-specific. Future work could focus on a broader collection of analyses to study the impact of reduced precision on actual clinical outcomes, such as segmentation accuracy or diagnostic reliability.
