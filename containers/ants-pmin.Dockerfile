@@ -17,8 +17,8 @@ RUN : \
     && :
 
 # ANTs superbuild failed, so we build ITK externally.
-# ITK AMP.
-ARG ITK_VERSION="amp"
+# ITK lipschitz.
+ARG ITK_VERSION="lipschitz"
 RUN : \
     && git clone https://github.com/mathdugre/ITK.git /tmp/itk/source \
     && cd /tmp/itk/source \
@@ -54,8 +54,8 @@ RUN : \
     && make install \
     && :
 
-# ANTs AMP with ITK verificarlo compilation.
-ARG ANTs_VERSION="amp"
+# ANTs lipschitz with ITK verificarlo compilation.
+ARG ANTs_VERSION="lipschitz"
 RUN : \
     && git clone https://github.com/mathdugre/ANTs.git /tmp/ants/source \
     && cd /tmp/ants/source \
