@@ -60,7 +60,7 @@
 
 \section{Introduction}
 \label{sec:introduction}
-Image registration transforms a pair or collection of images to a common space, enabling comparison between those images. It is a critical step in magnetic resonance imaging (MRI) processing pipelines as it enable the comparison of images acquired at different times, from different subjects, or from different modalities. Therefore, allowing for longitudianal studies, group analysis, or multi-modal imaging. By consequence, registration is an important step in toolkits such as the Advanced Normalization Tools (ANTs) registration framework~\cite{Avants2020-xx}---a widely adopted tool in the community.
+Image registration transforms a pair or collection of images to a common space, enabling comparison between those images. It is a critical step in magnetic resonance imaging (MRI) processing pipelines as it enable the comparison of images acquired at different times, from different subjects, or from different modalities. Therefore, allowing for longitudinal studies, group analysis, or multi-modal imaging. By consequence, registration is an important step in toolkits such as the Advanced Normalization Tools (ANTs) registration framework~\cite{Avants2020-xx}---a widely adopted tool in the community.
 
 MRI registration incurs a significant computational cost, often accounting for a majority of the runtime for MRI processing pipelines. As a result, optimizing registration performance is crucial for improving the overall efficiency of MRI processing---enabling studies with larger cohorts and clinical applications requiring processing in timely manner. Our previous study~\cite{Dugre2025-fs} identified two primary performance bottlenecks in MRI processing pipelines: (1) interpolation computation in the registration process and (2) memory bandwidth limitations.
 
@@ -72,9 +72,9 @@ While mixed precision has the potential for significant performance gains, deter
 	\item Theoretical analysis of minimum precision requirements in ANTs registration
 \end{itemize}
 
-We organize the remaining of this paper as follows. Section~\ref{sec:background} introduce the concept used to build our methods and discusses related work on reduced precision computation and numerical sensitivity of MRI registration. Section~\ref{sec:theory} details the theoretical analysis of minimum precision requirements, adapting the theorem by Hayford et al.~\cite{Hayford2024-kb}. Section~\ref{sec:experiments} describes our experimental setup, including the ANTs registration pipeline, our use of VPREC to simulate arbitrary data formats, and the dataset used. Finally, we report and discuss our results in Section~\ref{sec:results} and Section~\ref{sec:discussion}, respectively. Section~\ref{sec:conclusion} concludes the paper.
+We organize the remainder of this paper as follows. Section~\ref{sec:background} introduce the concept used to build our methods and discusses related work on reduced precision computation and numerical sensitivity of MRI registration. Section~\ref{sec:theory} details the theoretical analysis of minimum precision requirements, adapting the theorem by Hayford et al.~\cite{Hayford2024-kb}. Section~\ref{sec:experiments} describes our experimental setup, including the ANTs registration pipeline, our use of VPREC to simulate arbitrary data formats, and the dataset used. Finally, we report and discuss our results in Section~\ref{sec:results} and Section~\ref{sec:discussion}, respectively. Section~\ref{sec:conclusion} concludes the paper.
 
-\section{background}
+\section{Background}
 \label{sec:background}
 
 \subsection{Reduced and Mixed Precision Arithmetic}
@@ -242,7 +242,7 @@ As shown in Fig.~\ref{fig:ants-pmin-overview}, the predicted $p_{min}$ (dash lin
 	\label{fig:ants-pmin-overview}
 \end{figure*}
 
-Table~\ref{tab:area-ratio-summary} summarizes the area ratio percent where our prediction is above (overestimation) or below (underestimation) the VPREC thresholds across all stages. For a relative difference of $10^{-3}$ ($0.1\%$), our model underestimates the required precision by $11.57\%$ on average. Conversely, it overestimates by $34.57\%$, providing a safety margin that ensures the convergence guarantee in the majority of stage-level combinations. We observed a large standard deviation across these values, indicating that our model accuracy varies significantly across specific stage-level combinations.
+Table~\ref{tab:area-ratio-summary} summarizes the percentage of the area where our prediction is above (overestimation) or below (underestimation) the VPREC thresholds across all stages. For a relative difference of $10^{-3}$ ($0.1\%$), our model underestimates the required precision by $11.57\%$ on average. Conversely, it overestimates by $34.57\%$, providing a safety margin that ensures the convergence guarantee in the majority of stage-level combinations. We observed a large standard deviation across these values, indicating that our model accuracy varies significantly across specific stage-level combinations.
 \begin{table}[htb!]
 	\centering
 	\begin{tabular}{@{}lll@{}}
@@ -265,7 +265,11 @@ Our results establish a ``numerical floor'' for the ANTs and ITK frameworks. Whi
 Furthermore, the ``catastrophic failures'' observed during low-precision initialization (Exp. 1111) underscore the sensitivity of the initial global alignment. Because initialization defines the search space for all subsequent stages, rounding errors at this stage are particularly detrimental; at very low mantissa precision, these errors resulted in severe topological discontinuities and loss of anatomical structures in the transformed volumes. This suggests that while later stages exhibit a degree of resilience to numerical noise, the center-of-mass alignment must be preserved at higher precision to ensure a stable registration.
 
 \subsection{Theoretical Assumptions and Practical Robustness}
-The theoretical model adapted from Hayford et al.~\cite{Hayford2024-kb} relies on the assumption of loss function convexity. In the context of medical image registration, particularly with high-resolution 3D MRI volumes and complex similarity metrics like CC, the convexity of the cost function is challenging to determine and likely non-convex. Despite this theoretical mismatch, our results demonstrate that our $p_{min}$ model (Eq.~\ref{eq:pmin}) remains an effective heuristic for predicting precision requirements. However, this is likely application-specific, and further research should investigate our model on a collection of applications to assess whether this assumption can be relaxed in practice.
+The theoretical model adapted from Hayford et al.~\cite{Hayford2024-kb} relies on the assumption of loss function convexity. In the context of medical image registration, particularly with high-resolution 3D MRI volumes and complex similarity metrics like CC, the convexity of the cost function is challenging to determine and likely non-convex. Despite this theoretical mismatch, our results demonstrate that our $p_{min}$ model (Eq.~\ref{eq:pmin}) remains an effective heuristic for predicting precision requirements.
+
+Albeit the non-convexity of deep learning loss landscapes, Gur-Ari et al.~\cite{Gur-Ari2018-pm} demonstrated that stochastic gradient descent (SGD) is confined to a small subspace of the parameter space, which is spanned by the top eigenvectors of the Hessian. This suggests that while the overall loss landscape may be non-convex, the optimization will happen in a convex subspace. Another study by Liu et al.~\cite{Liu2020-pe} showed that over-parametrized neural networks generally satisfy a variant of the Polyak-Lojasiewicz (PL) condition ($\|\nabla{L(w)}\|^2 \geq \mu L(w)$). If the loss satisfies the PL condition, then it is guaranteed to converge to the global minimum, even when the global loss landscape is non-convex.
+
+Unlike deep learning optimization, the ANTs registration loss parameters have a direct, localized impact on the anatomical integrity of the output, by directly modifying the spatial transformation of each voxel. Therefore, the over-parametrization argument of the optimization does not apply to ANTs registration. However, the optimization the multi-resolution pyramid, the use of Guassian smoothing, and the regularization on the loss could potentially smooth the loss landscape and create a convex subspace for optimization. Future work should investigate the loss landscape of ANTs registration to better understand the theoretical assumptions of our model and its practical robustness.
 
 \subsection{Norm Choice}
 We used the $L_2$ norm across all of our computations, consistent with the approach in Hayford et al.~\cite{Hayford2024-kb}. While this ensures methodological alignment, we acknowledge that the $L_2$ norm does not account for the different units and variability of our transformation parameters. Thus, future work should investigate the impact of using different norms, such as Mahalanobis norm, which would better account for parameter scaling.
@@ -275,6 +279,8 @@ Previous work by Mirhakimi et al.~\cite{Mirhakimi2025-qb} identified that the si
 
 \subsection{Defining Accuracy Thresholds}
 While we compare our model against multiple accuracy thresholds, their definition lacks robustness and remain application-specific. Future work could focus on a broader collection of analyses to study the impact of reduced precision on actual clinical outcomes, such as segmentation accuracy or diagnostic reliability.
+
+% TODO (1) Look into the literature and (2) Discuss how a 10^-4 or 10^-5 relative difference might affect clinical outcome downstream (e.g., volume estimation or segmentation).
 
 % \subsection{Performance Opportunity from $p_{min}$ Estimation}
 % Our current experiments incur a large computational cost by simulating each range-precision combination with VPREC. Utilizing our theoretical model to predict $p_{min}$---and subsequently modifying the precision during runtime---would allow for precision tuning without the need for repeated executions. This would enable the practical use of mixed precision in ANTs by allowing the framework to adapt its bit-width dynamically based on the specific requirements of each iteration.
