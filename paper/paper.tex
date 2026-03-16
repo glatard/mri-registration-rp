@@ -260,21 +260,20 @@ Table~\ref{tab:area-ratio-summary} summarizes the percentage of the area where o
 \section{Discussion}
 \label{sec:discussion}
 \subsection{Numerical Stability and Convergence Floors}
-Our results establish a ``numerical floor'' for the ANTs and ITK frameworks. While low-precision formats such as Float24 (r7-p16) maintain high numerical integrity, reducing the representation to 6 bits or fewer in either the exponent or mantissa consistently led to execution instabilities, including segmentation faults or indefinite hangs. Given the complex, multi-branched architecture of the ITK-based optimization pipeline, we attribute these failures to numerical noise triggering divergent execution paths or the failure to satisfy convergence thresholds, leading to unexpected execution states.
+Our results establish the first ``numerical floor'' for the ANTs and ITK frameworks. While low-precision formats such as Float24 (r7-p16) maintain high numerical integrity, reducing the representation to 6 bits or fewer in either the exponent or mantissa consistently led to execution instabilities, including segmentation faults or indefinite hangs. Given the complex, multi-branched architecture of the ITK-based optimization pipeline, we attribute these failures to numerical noise triggering divergent execution paths or the failure to satisfy convergence thresholds, leading to unexpected execution states.
 
 Furthermore, the ``catastrophic failures'' observed during low-precision initialization (Exp. 1111) underscore the sensitivity of the initial global alignment. Because initialization defines the search space for all subsequent stages, rounding errors at this stage are particularly detrimental; at very low mantissa precision, these errors resulted in severe topological discontinuities and loss of anatomical structures in the transformed volumes. This suggests that while later stages exhibit a degree of resilience to numerical noise, the center-of-mass alignment must be preserved at higher precision to ensure a stable registration.
 
 \subsection{Theoretical Assumptions and Practical Robustness}
-The theoretical model adapted from Hayford et al.~\cite{Hayford2024-kb} relies on the assumption of loss function convexity. In the context of medical image registration, particularly with high-resolution 3D MRI volumes and complex similarity metrics like CC, the convexity of the cost function is challenging to determine and likely non-convex. Despite this theoretical mismatch, our results demonstrate that our $p_{min}$ model (Eq.~\ref{eq:pmin}) remains an effective heuristic for predicting precision requirements.
+The theoretical model adapted from Hayford et al.~\cite{Hayford2024-kb} assumes a convex loss function. However, in medical image registration with high-resolution 3D MRI volumes and complex similarity metrics like cross-correlation, the cost function is likely non-convex. Despite this theoretical limitation, our empirical results demonstrate that the $p_{min}$ model (Eq.~\ref{eq:pmin}) remains an effective heuristic for predicting precision requirements.
 
-Albeit the non-convexity of deep learning loss landscapes, Gur-Ari et al.~\cite{Gur-Ari2018-pm} demonstrated that stochastic gradient descent (SGD) is confined to a small subspace of the parameter space, which is spanned by the top eigenvectors of the Hessian. This suggests that while the overall loss landscape may be non-convex, the optimization will happen in a convex subspace. Another study by Liu et al.~\cite{Liu2020-pe} showed that over-parametrized neural networks generally satisfy a variant of the Polyak-Lojasiewicz (PL) condition ($\|\nabla{L(w)}\|^2 \geq \mu L(w)$), where $\mu>0$ is the PL constant. If the loss satisfies the PL condition, then it is guaranteed to converge to the global minimum, even when the global loss landscape is non-convex.
+Prior work in deep learning suggest that non-convexity may not invalidate convergence. Gur-Ari et al.~\cite{Gur-Ari2018-pm} demonstrated that stochastic gradient descent confines optimization to a low-dimensional subspace spanned by the top Hessian eigenvectors, which can exhibit locally convex properties, despite a globally non-covex loss landscape. Additionally, Liu et al.~\cite{Liu2020-pe} showed that over-parametrized neural networks often satisfy the Polyak-Lojasiewicz~\cite{Lojasiewicz1963-xd,Polyak1963-nd} condition, enabling convergence to global minima despite non-convex landscapes.
 
-Unlike deep learning optimization, the ANTs registration loss parameters have a direct, localized impact on the anatomical integrity of the output, by directly modifying the spatial transformation of each voxel. Therefore, the over-parametrization argument of the optimization does not apply to ANTs registration. However, the optimization the multi-resolution pyramid, the use of Guassian smoothing, and the regularization on the loss could potentially smooth the loss landscape and create a convex subspace for optimization. Future work should investigate the loss landscape of ANTs registration to better understand the theoretical assumptions of our model and its practical robustness.
+The ANTs registration problem differs from deep learning optimization in a critical way: transformation parameters directly affect anatomical integrity by modifying spatial voxel mappings, making over-parametrization arguments inapplicable. However, several factors may create a locally convex optimization subspace: the multi-resolution pyramid progressively refines the search space, Gaussian smoothing regularizes the loss landscape, and explicit regularization constraints further stabilize optimization. Future work should characterize the ANTs loss landscape to validate these theoretical assumptions and better understand when our model provides reliable predictions.
 
-\subsection{Norm Choice}
+\subsection{Parameters Choice}
 We used the $L_2$ norm across all of our computations, consistent with the approach in Hayford et al.~\cite{Hayford2024-kb}. While this ensures methodological alignment, we acknowledge that the $L_2$ norm does not account for the different units and variability of our transformation parameters. Thus, future work should investigate the impact of using different norms, such as Mahalanobis norm, which would better account for parameter scaling.
 
-\subsection{Similarity Metric Stability}
 Previous work by Mirhakimi et al.~\cite{Mirhakimi2025-qb} identified that the similarity metrics used in ANTs linear registration significantly influence numerical stability.  Future research should explore how varying similarity metrics impact the precision requirements and overall stability of the registration process.
 
 \subsection{Defining Accuracy Thresholds}
@@ -283,7 +282,11 @@ While we compare our model against multiple accuracy thresholds, their definitio
 % TODO (1) Look into the literature and (2) Discuss how a 10^-4 or 10^-5 relative difference might affect clinical outcome downstream (e.g., volume estimation or segmentation).
 
 
-\subsection{Model Under- and Over-prediction}
+\subsection{Model Predictions}
+% TODO rework section completely.
+Our model predictions are conservative, with only a 6--17\% underestimation in bit requirements across relative difference thresholds ($10^{-2}$, $5\times10^{-3}$, $10^{-3}$, and $10^{-4}$). However, the model tend to overpredict the required precision by 50
+
+
 Our theoretical model is unlikely to predict the exact bit requirements for every iteration. On the one hand, over-prediction preserves the convergence guarantee but limits the potential speedup from lower-bit formats. On the other hand, under-prediction risks convergence problems by aggressively reducing the bit-width utilized. Balancing these factors is essential for maximizing performance without compromising numerical stability.
 
 \subsection{Implementation of Mixed Precision}
