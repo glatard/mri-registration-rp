@@ -205,9 +205,6 @@ To improve readability, we omit redundant configurations for the affine and SyN 
 
 Our results indicate that low-precision formats, such as FP32 (r8-p23) and FP24 (r7-p16), maintain high numerical integrity, with relative differences remaining below $10^{-5}$ compared to FP64. To achieve a relative difference threshold of $10^{-4}$, the rigid and affine stages require a minimum of 11 bits of precision, while the SyN stage necessitates at least 13 bits. These requirements are significantly lower than the 53 bits provided by FP64.
 
-\MD{A bit repetitive with discussion}
-We observed no significant performance variance between exponent ranges of 7 and 8 bits. However, reducing either the exponent range or the mantissa precision to 6 bits caused the pipeline to either crash or hang across all subjects and stages. This suggests a critical numerical floor required for the stability of ITK-based optimization branches.
-
 \subsection{Current Stage Precision Primarily Dictates Final Registration Accuracy}
 Table~\ref{tab:stage-accuracy} illustrates how precision at different stages of the pipeline affects the final similarity metric. We specifically examined the BF16 format to observe how errors propagate from the initial rigid alignment through to the final SyN stage.
 
