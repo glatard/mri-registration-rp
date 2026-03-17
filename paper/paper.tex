@@ -32,30 +32,19 @@
 {Author \MakeLowercase{\textit{et al.}}: Preparation of Papers for IEEE TRANSACTIONS ON MEDICAL IMAGING}
 \begin{document}
 \title{An Evaluation of Mixed Precision Arithmetic in ANTs Registration}
-\author{Dugr\'e Mathieu, Chatelain Yohan, and Glatard Tristan
-	\thanks{This paragraph of the first footnote will contain the date on which
-		you submitted your paper for review. It will also contain support information,
-		including sponsor and financial support acknowledgment. For example, 
-		``This work was supported in part by the U.S. Department of Commerce under Grant BS123456.'' }
-	\thanks{The next few paragraphs should contain the authors' current affiliations,
-		including current address and e-mail. For example, F. A. Author is with the
-		Concordia University, Montreal, Quebec, Canada (e-mail:research@mathdugre.me). }
-	\thanks{S. B. Author, Jr., was with Rice University, Houston, TX 77005 USA.
-		He is now with the Department of Physics, Colorado State University,
-		Fort Collins, CO 80523 USA (e-mail: author@lamar.colostate.edu).}
-	\thanks{T. C. Author is with the Electrical Engineering Department,
-		University of Colorado, Boulder, CO 80309 USA, on leave from the National
-		Research Institute for Metals, Tsukuba, Japan (e-mail: author@nrim.go.jp).}}
-% TODO: Replace with our affiliations
+\author{Mathieu Dugr\'e , Yohan Chatelain, and Tristan Glatard
+\thanks{This work was supported in part by a Natural Sciences and Engineering Research Council of Canada (NSERC) Postgraduate Scholarship-Doctoral (PGS D) scholarship awarded to M. Dugr\'e. This work was also supported by Compute Canada and the Digital Research Alliance of Canada who provided the compute resources for our experiments.}
+\thanks{M. Dugr\'e and T. Glatard are with the Department of Computer Science and Software Engineering, Concordia University, Montreal, Quebec, Canada (e-mail: research@mathdugre.me).}
+\thanks{Y. Chatelain and T. Glatard are with the Centre for Addiction and Mental Health (CAMH), Toronto, Ontario, Canada (e-mail: {yohan.chatelain@gmail.com, tristan.glatard@camh.ca})}}
 
 \maketitle
 
 \begin{abstract}
-	Registration is key to MRI analysis, allowing comparison between two or more images. Its high compute cost limits analysis of larger cohorts and time sensitive applications. Mixed precision is a technique leveraging high- and low-precision arithmetic to accelerate computations while maintaining accuracy. Its success in accelerating deep learning models led to a broad adoption, but its adoption remains limited in other scientific domains due to the limited understanding of its effect in complex application. In this work, we propose to study the effects of mixed precision in ANTs registration---a common MRI registration pipeline. We use VPREC to simulate arbitrary precision arithmetic, and develop a model to predict the minimal precision required for convergence per iteration of the optimization process. Our results suggest that using low precision (FP32 \& FP24) is sufficient in ANTs registration. Our model tends to underestimate the number of precision bits required by 11.6\%, on average. Our work pushes the understanding of mixed precision in ANTs registration, by characterizing when the method is beneficial. Therefore, laying the ground for practical acceleration of the pipeline. Furthermore, our theoretical model offer a simple approach to optimizing the precision in ANTs registration, offering a building block for more accurate predictions.
+	Registration is key to MRI analysis, allowing comparison between two or more images. Its high compute cost limits analysis of larger cohorts and time sensitive applications. Mixed precision is a technique leveraging high- and low-precision arithmetic to accelerate computations while maintaining accuracy. Its success in accelerating deep learning models led to a broad adoption, but its adoption remains limited in other scientific domains due to the limited understanding of its effect in complex application. In this work, we propose to study the effects of mixed precision in ANTs registration---a common MRI registration pipeline. We use VPREC to simulate arbitrary precision arithmetic, and develop a model to predict the minimal precision required for convergence per iteration of the optimization process. Our results suggest that using low precision (FP32 \& FP24) is sufficient in ANTs registration. Our model tends to underestimate the number of precision bits required by 11.6\%, on average (threshold: $10^{-3}$). Our work pushes the understanding of mixed precision in ANTs registration, by characterizing when the method is beneficial. Therefore, laying the ground for practical acceleration of the pipeline. Furthermore, our theoretical model offer a simple approach to optimizing the precision in ANTs registration, offering a building block for more accurate predictions.
 \end{abstract}
 
 \begin{IEEEkeywords}
-	Reduced precision, Image registration, Performance, MRI, Neuroimaging, ANTs, ITK
+	mixed precision, image registration, performance, mri, neuroimaging, ANTs, ITK
 \end{IEEEkeywords}
 
 \section{Introduction}
@@ -66,21 +55,22 @@ MRI registration incurs a significant computational cost, often accounting for a
 
 Mixed precision arithmetic leverages a mix of high- and low-precision data formats to accelerate applications while maintaining acceptable accuracy. Data formats with smaller bit width have faster arithmetic operations and reduce the memory footprint. Therefore, it has the potential to alleviate both bottlenecks. However, while mixed precision has the potential for significant performance gains, it is unclear when and where it can be applied in complex scientific pipelines like medical image registration without compromising result integrity.
 
-While mixed precision has the potential for significant performance gains, determining the appropriate precision either spatially, temporally, or both, is challenging in complex or large-scale applications. In this work, we limit our scope to reduced precision; where the application uses the same data format throughout. We conduct a detailed analysis of reduced precision formats in the context of ANTs registration pipeline~\cite{Avants2020-xx}. This work contributes to the understanding and application of reduced precision formats in MRI registration by doing the following:
+While mixed precision has the potential for significant performance gains, determining the appropriate precision either spatially, temporally, or both, is challenging in complex or large-scale applications. We conduct a detailed analysis of mixed precision formats in the context of ANTs registration pipeline~\cite{Avants2020-xx}. This work contributes to the understanding and application of mixed precision formats in MRI registration by doing the following:
 \begin{itemize}
-	\item Empirical evaluation of reduced precision formats in ANTs registration
-	\item Theoretical analysis of minimum precision requirements in ANTs registration
+	\item \textbf{Empirical Evaluation:} Demonstrate that low-precision formats (i.e., FP32 and FP24) satisfy the numerical requirements of ANTs registration, safely relaxing the default reliance on resource-intensive FP64 arithmetic.
+	\item \textbf{Theoretical Bounds:} Introduce a predictive model establishing the minimum computational precision required at each optimization iteration to guarantee convergence.
+	\item \textbf{Heuristic Validation:} Validate these mathematical bounds against simulation benchmarks, providing a reliable heuristic to guide dynamic precision tuning for future performance optimization.
 \end{itemize}
 
-We organize the remainder of this paper as follows. Section~\ref{sec:background} introduce the concept used to build our methods and discusses related work on reduced precision computation and numerical sensitivity of MRI registration. Section~\ref{sec:theory} details the theoretical analysis of minimum precision requirements, adapting the theorem by Hayford et al.~\cite{Hayford2024-kb}. Section~\ref{sec:experiments} describes our experimental setup, including the ANTs registration pipeline, our use of VPREC to simulate arbitrary data formats, and the dataset used. Finally, we report and discuss our results in Section~\ref{sec:results} and Section~\ref{sec:discussion}, respectively. Section~\ref{sec:conclusion} concludes the paper.
+We organize the remainder of this paper as follows. Section~\ref{sec:background} introduce the concept used to build our methods and discusses related work on mixed precision computation and numerical sensitivity of MRI registration. Section~\ref{sec:theory} details the theoretical analysis of minimum precision requirements, adapting the theorem by Hayford et al.~\cite{Hayford2024-kb}. Section~\ref{sec:experiments} describes our experimental setup, including the ANTs registration pipeline, our use of VPREC to simulate arbitrary data formats, and the dataset used. Finally, we report and discuss our results in Section~\ref{sec:results} and Section~\ref{sec:discussion}, respectively. Section~\ref{sec:conclusion} concludes the paper.
 
 \section{Background}
 \label{sec:background}
 
 \subsection{Reduced and Mixed Precision Arithmetic}
-The computational complexity of arithmetic operations is approximately quadratic relative to the bit-width of the data format utilized~\cite{Wang2019-qe}. Consequently, enabling applications to utilize reduced bit-width formats offers significant performance benefits. Traditionally, pipeline developers have relied on \textit{binary64} (FP64) and \textit{binary32} (FP32) to balance resource requirements with numerical accuracy. However, many applications may not necessitate the high dynamic range or precision of these formats and could be significantly accelerated through reduced precision strategies.
+The computational complexity of arithmetic operations is approximately quadratic relative to the bit-width of the data format utilized~\cite{Wang2019-qe}. Consequently, enabling applications to utilize reduced bit-width formats offers significant performance benefits. Traditionally, pipeline developers have relied on \textit{binary64} (FP64) and \textit{binary32} (FP32) to balance resource requirements with numerical accuracy. However, many applications may not necessitate the high dynamic range or precision of these formats and could be significantly accelerated through mixed precision strategies.
 
-Mixed precision optimizes performance by leveraging a combination of high- and low-bit-width arithmetic. These variations in precision can be applied either temporally (across iterations) or spatially (across specific code sections). While mixed precision promises higher performance gains than static reduced precision methods, its implementation in complex pipelines is often technically challenging, typically requiring extensive and intrusive code modifications.
+Mixed precision optimizes performance by leveraging a combination of high- and low-bit-width arithmetic. These variations in precision can be applied either temporally (across iterations) or spatially (across specific code sections). While mixed precision promises higher performance gains than static mixed precision methods, its implementation in complex pipelines is often technically challenging, typically requiring extensive and intrusive code modifications.
 
 \subsection{Prior Work on Mixed Precision}
 Mixed precision has been widely adopted in deep learning (DL), where the escalating parameters and computational demands of modern models have driven the adoption of lower precision formats, such as half-precision (FP16), bfloat16 (BF16), and sub-8-bit representations. This significantly reduces memory bandwidth usage while accelerating matrix multiplications. The foundation of modern mixed precision training was established by Micikevicius et al.~\cite{Micikevicius2017-sf}, who introduced critical techniques to prevent accuracy degradation when training with FP16, including maintaining an FP32 master copy of weights, loss scaling, and high-precision accumulation. PyTorch~\cite{Paszke2019-vk} and TensorFlow~\cite{Abadi2016-vm}, popular DL frameworks, provide native support for Automatic Mixed Precision (AMP) utilizing static heuristics mapping operations to predefined precisions.
@@ -107,9 +97,9 @@ Accuracy thresholds in this context are highly application-specific and remain p
 
 \section{Theoretical Analysis}
 \label{sec:theory}
-To analyze the impact of rounding errors on convergence, we adapted the theoretical framework proposed by Hayford et al.~\cite{Hayford2024-kb}. The model characterizes the optimization convergence under reduced precision arithmetic, specifically focusing on the point where rounding noise dominates the gradient signal. While originally derived to bound rounding errors in DL optimization using BF16 arithmetic, the underlying theorem is applicable to any gradient-based optimization, including the iterative registration stages in ANTs.
+To analyze the impact of rounding errors on convergence, we adapted the theoretical framework proposed by Hayford et al.~\cite{Hayford2024-kb}. The model characterizes the optimization convergence under mixed precision arithmetic, specifically focusing on the point where rounding noise dominates the gradient signal. While originally derived to bound rounding errors in DL optimization using BF16 arithmetic, the underlying theorem is applicable to any gradient-based optimization, including the iterative registration stages in ANTs.
 
-Suppose $\theta$ represents the optimization parameters, $\mathcal{L}(\theta)$ the loss function, and $\eta$ the learning rate. In a reduced precision setting with $p$ bits of mantissa precision, the gradient descent update is perturbed by an error of $\delta\theta$:
+Suppose $\theta$ represents the optimization parameters, $\mathcal{L}(\theta)$ the loss function, and $\eta$ the learning rate. In a mixed precision setting with $p$ bits of mantissa precision, the gradient descent update is perturbed by an error of $\delta\theta$:
 \begin{equation}
 	\theta \leftarrow \theta - \eta \nabla\mathcal{L}(\theta + \delta\theta)
 \end{equation}
@@ -143,10 +133,10 @@ The ANTs registration framework~\cite{Avants2020-xx} is a multi-stage, multi-res
 
 The rigid and affine stages utilize mutual information (MI) as the objective function, while the SyN stage uses cross-correlation (CC). Images are smoothed prior to down-sampling at each level. The process terminates when the optimization reaches the maximum number of iterations or when the objective function converges within a threshold of $10^{-6}$ over the last 10 iterations. ANTs leverages the registration framework from the Insight Toolkit (ITK)~\cite{Yoo2002-ve, McCormick2014-ok} for computation.
 
-\subsection{Reduced Precision using VPREC}
+\subsection{Mixed Precision using VPREC}
 Although ANTs provides a flag to enable single precision (FP32) computation, our previous study~\cite{Dugre2025-fs} identified a bug in ITK\footnote{https://github.com/InsightSoftwareConsortium/ITK/issues/4593} where interpolation operations execute in double precision (FP64) regardless of compilation or runtime settings. This results in casting overhead that degrades performance compared to the default FP64 pipeline execution.
 
-To explore the impact of reduced precision, we used Verificarlo with the VPREC backend to simulate specific bit-widths via compile-time instrumentation. We evaluated combinations of exponent ranges (6--8 bits) and mantissa precision (6--23 bits) against the default FP64 baseline.
+To explore the impact of mixed precision, we used Verificarlo with the VPREC backend to simulate specific bit-widths via compile-time instrumentation. We evaluated combinations of exponent ranges (6--8 bits) and mantissa precision (6--23 bits) against the default FP64 baseline.
 
 We hypothesized that precision requirements vary by stage: failures in early alignment may propagate, while high-resolution stages likely necessitate finer precision to ensure convergence. Consequently, we tested precision reduction across various stage combinations as detailed in Table~\ref{tab:vprec_combinations}. We recompiled ANTs and ITK with Verificarlo for runtime simulation of precision reduction. Instrumentation was disabled for metric computation modules, as low-precision noise in these components caused the pipeline to crash due to values deviating from the expected convergence range.
 
@@ -164,7 +154,7 @@ We hypothesized that precision requirements vary by stage: failures in early ali
 		0100                              & 0                                                                 & 1     & 0      & 0   \\
 		\bottomrule
 	\end{tabular}
-	\caption{Configuration of Stage-Specific Precision Reduction. Experiment IDs are encoded as a four-digit binary sequence where 0 represents default FP64 precision and 1 represents VPREC-instrumented reduced precision. The digits correspond to the following pipeline stages: (1) initialization, (2) rigid, (3) affine, and (4) SyN.}
+	\caption{Configuration of Stage-Specific Precision Reduction. Experiment IDs are encoded as a four-digit binary sequence where 0 represents default FP64 precision and 1 represents VPREC-instrumented mixed precision. The digits correspond to the following pipeline stages: (1) initialization, (2) rigid, (3) affine, and (4) SyN.}
 	\label{tab:vprec_combinations}
 \end{table}
 
@@ -178,7 +168,7 @@ We used the \textit{BMB\_1} site from the \textit{CoRR} dataset~\cite{Zuo2014-ub
 \label{sec:results}
 
 \subsection{FP32 Provides Sufficient Accuracy for ANTs Registration}
-We evaluated the impact of reduced precision by measuring the relative difference in similarity metrics compared to the FP64 baseline. Fig.~\ref{fig:ants-space-search} illustrates these differences across combinations of exponent range and mantissa precision.
+We evaluated the impact of mixed precision by measuring the relative difference in similarity metrics compared to the FP64 baseline. Fig.~\ref{fig:ants-space-search} illustrates these differences across combinations of exponent range and mantissa precision.
 
 To improve readability, we omit redundant configurations for the affine and SyN stages from the visualization. We observed that the numerical behavior within a specific stage remained consistent across different configurations, provided the stage itself was instrumented with the same precision parameters.
 \begin{figure*}[htb!]
@@ -256,7 +246,7 @@ Table~\ref{tab:area-ratio-summary} summarizes the percentage of the area where o
 
 \section{Discussion}
 \label{sec:discussion}
-Our evaluation of reduced precision within the ANTs framework reveals that standard low-precision formats (FP32 and FP24) are generally sufficient for robust image registration. Furthermore, our theoretical model offers an effective heuristic for bounding dynamic precision requirements. The following sections discuss the implications, limitations, and practical integration of these findings.
+Our evaluation of mixed precision within the ANTs framework reveals that standard low-precision formats (FP32 and FP24) are generally sufficient for robust image registration. Furthermore, our theoretical model offers an effective heuristic for bounding dynamic precision requirements. The following sections discuss the implications, limitations, and practical integration of these findings.
 
 \subsection{Numerical Stability and Convergence Floors}
 Our results establish the first ``numerical floor'' for the ANTs and ITK frameworks. While low-precision formats such as Float24 (r7-p16) maintain high numerical integrity, reducing the representation to 6 bits or fewer in either the exponent or mantissa consistently led to execution instabilities, including segmentation faults or indefinite hangs. Given the complex, multi-branched architecture of the ITK-based optimization pipeline, we attribute these failures to numerical noise triggering divergent execution paths or the failure to satisfy convergence thresholds, leading to unexpected execution states.
@@ -278,13 +268,13 @@ Our current experiments incur a large computational cost by simulating each rang
 However, fine-grained mixed precision presents two primary technical challenges. First, frequent precision casting can cause overhead that outscales the arithmetic benefits. Second, implementing such tuning is difficult in large, legacy codebases like ITK. In our methods the similarity metric calculation is computed in FP64 to preserve stability. In practice, this would create a large casting overhead at each iteration and be challenging to implement spatial mixed precision in ITK. Future research must align the similarity metric's precision with the optimization pipeline to simplify configuration and eliminate casting bottlenecks.
 
 \subsection{Limitations and Clinical Relevance}
-While our model effectively predicts the minimum precision requirement, several components limit its generalizability and require further research. First, our current model makes precision predictions based on the FP64 loss landscape. Dynamically adjusting the computational precision based on these predictions would modify the loss landscape, potentially affecting the accuracy of subsequent predictions. Second, we utilized the $L_2$ norm consistently with Hayford et al.~\cite{Hayford2024-kb}, which does not account for the varying units and scales of affine transformation parameters. Future studies should investigate scale-invariant norms, such as the Mahalanobis norm. Third, since previous work demonstrated that similarity metrics significantly influence numerical stability~\cite{Mirhakimi2025-qb}, the interaction between other metric types and reduced precision requires deeper investigation.
+While our model effectively predicts the minimum precision requirement, several components limit its generalizability and require further research. First, our current model makes precision predictions based on the FP64 loss landscape. Dynamically adjusting the computational precision based on these predictions would modify the loss landscape, potentially affecting the accuracy of subsequent predictions. Second, we utilized the $L_2$ norm consistently with Hayford et al.~\cite{Hayford2024-kb}, which does not account for the varying units and scales of affine transformation parameters. Future studies should investigate scale-invariant norms, such as the Mahalanobis norm. Third, since previous work demonstrated that similarity metrics significantly influence numerical stability~\cite{Mirhakimi2025-qb}, the interaction between other metric types and mixed precision requires deeper investigation.
 
 Finally, the accuracy thresholds in this study were strictly defined via relative numerical differences from the FP64 baseline. These pure mathematical thresholds lack direct clinical interpretation. To confidently transition mixed precision registration into clinical deployment, future work must evaluate the impact of minor registration differences on concrete downstream tasks. This involves ensuring reliability in clinical applications such as volume estimation in voxel-based morphometry, longitudinal tracking of lesions, or high-stakes surgical planning, where the margin for topological distortion is critical.
 
 \section{Conclusion}
 \label{sec:conclusion}
-In this work, we evaluated the feasibility and impact of using reduced precision arithmetic in the ANTs registration pipeline. Our empirical analysis demonstrates that standard single-precision (FP32) and even lower-precision formats like FP24 are sufficient to maintain registration accuracy comparable to the default double-precision (FP64) baseline. We observed that while the initialization stage is highly sensitive to numerical precision, subsequent optimization stages exhibit a degree of resilience, allowing for ``accuracy recovery'' where high precision in the final stage compensates for lower precision in earlier steps.
+In this work, we evaluated the feasibility and impact of using mixed precision arithmetic in the ANTs registration pipeline. Our empirical analysis demonstrates that standard single-precision (FP32) and even lower-precision formats like FP24 are sufficient to maintain registration accuracy comparable to the default double-precision (FP64) baseline. We observed that while the initialization stage is highly sensitive to numerical precision, subsequent optimization stages exhibit a degree of resilience, allowing for ``accuracy recovery'' where high precision in the final stage compensates for lower precision in earlier steps.
 
 Furthermore, we introduced a theoretical model to predict the minimum precision ($p_{min}$) required for convergence at each iteration. While our model tends to be conservative---often overestimating the required bit-width---it provides a safety margin that ensures convergence. This theoretical framework offers a promising path toward dynamic mixed precision registration, where precision can be tuned on-the-fly to improve performance without compromising results accuracy.
 
