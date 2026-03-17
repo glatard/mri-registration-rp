@@ -134,7 +134,7 @@ where $p_{min}$ is the minimum number of mantissa bits required at a given itera
 \end{equation}
 By computing Equation~\ref{eq:pmin} dynamically, we determine the minimum precision per iterations necessary to maintain the accuracy of the ANTs registration optimization.
 
-\MD{TODO Discuss the application of the model for mixed precision}
+The model could be used to dynamically adjust precision at runtime in ANTs, or other gradient-based optimization (e.g., deep learning training), by instrumenting the code to compute $p_{min}$ at each iteration and adjusting the precision accordingly. However, this dynamic adjustment would require extensive code modification and is outside the scope of this work. We focus on evaluating the accuracy of the model in predicting precision requirements.
 
 \section{Experiments}
 \label{sec:experiments}
