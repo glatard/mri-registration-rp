@@ -169,7 +169,10 @@ omit it, or move it to results.}
 \label{sec:theory}
 To analyze the impact of rounding errors on convergence, we adapted the theoretical framework proposed by Hayford et al.~\cite{Hayford2024-kb}. The model characterizes the optimization convergence under mixed precision arithmetic, specifically focusing on the point where rounding noise dominates the gradient signal. While originally derived to bound rounding errors in DL optimization using BF16 arithmetic, the underlying theorem is applicable to any gradient-based optimization, including the iterative registration stages in ANTs.
 
-Suppose $\theta$ represents the optimization parameters, $\mathcal{L}(\theta)$ the loss function, and $\eta$ the learning rate. In a mixed precision setting with $p$ bits of mantissa precision, the gradient descent update is perturbed by an error of $\delta\theta$:
+Let $\theta$ represent the optimization parameters, $\mathcal{L}(\theta)$
+the loss function, and $\eta$ the learning rate. In a mixed precision setting
+with $p$ bits of mantissa precision, the gradient descent update is perturbed by
+an error of $\delta\theta$:
 \begin{equation}
 	\theta \leftarrow \theta - \eta \nabla\mathcal{L}(\theta + \delta\theta)
 \end{equation}
@@ -177,22 +180,40 @@ where the rounding error satisfies the relative bound $\|\delta\theta\| \leq 2^{
 
 Under the assumptions that $\mathcal{L}$ is convex and $\nabla \mathcal{L}$ is Lipschitz continuous with constant $K$ such that $K < 1/\eta$:
 \begin{equation}
-	\|\nabla \mathcal{L}(x) - \nabla \mathcal{L}(y)\| \leq K \|x - y\| \quad \forall x, y
+	\|\nabla \mathcal{L}(x) - \nabla \mathcal{L}(y)\| \leq K \|x - y\| \quad \forall x, y,
 \end{equation}
-the optimization is guaranteed to progress toward the minimum only as long as the gradient signal $\|\nabla \mathcal{L}(\theta)\|$ exceeds the rounding noise. The theorem shows that if the model does not converge to the minimum, then it will reach a critical zone bounding the loss gradient norm as follows:
+the optimization is guaranteed to progress toward the minimum only as \TG{``only
+as'' is ambiguous, do you mean "if and only if"?} long as the gradient signal
+$\|\nabla \mathcal{L}(\theta)\|$ exceeds the rounding noise. The theorem shows
+that if the model \TG{which model? Do you mean ``the optimization''} does not
+converge to the minimum, then it will reach a critical zone \TG{``the model''
+doesn't reach a zone. Do you mean that the optimal value theta star will?}
+bounding the loss gradient norm as follows:
 \begin{equation}
 	\|\nabla \mathcal{L}(\theta)\| \leq \frac{4+3\sqrt{2}}{2^{p}} K \|\theta\|.
 \end{equation}
-The constant $4+3\sqrt{2}$ is a symbolic bound derived from the quadratic inequality required to guarantee $\mathcal{L}(\theta_{t+1}) < \mathcal{L}(\theta_t)$. By taking the contrapositive, we establish a sufficient condition for convergence. To ensure the gradient signal is not masked by precision-induced noise, the precision $p$ must satisfy:
+The constant $4+3\sqrt{2}$ is a symbolic bound derived from the quadratic
+inequality required to guarantee $\mathcal{L}(\theta_{t+1}) <
+\mathcal{L}(\theta_t)$. By taking the contrapositive, we establish a sufficient
+condition for convergence. To ensure the gradient signal is not masked by
+precision-induced noise, the precision $p$ must satisfy \TG{I think the logic is
+wrong here, it should be ``if the bound is verified then the optimization will
+converge''. But if the bound is not verified then the optimization may also
+converge, which you should note.}:
 \begin{equation}
 	p > p_{min} = \log_2 \left( \frac{(4+3\sqrt{2}) K \|\theta\|}{\|\nabla\mathcal{L}(\theta)\|} \right)
 	\label{eq:pmin}
 \end{equation}
-where $p_{min}$ is the minimum number of mantissa bits required at a given iteration. We modified ITK to probe $K$, $\|\nabla \mathcal{L}\|$, and $\|\theta\|$ at each iteration. As in the original study, $K$ was estimated using a first-order finite difference:
+where $p_{min}$ is the minimum number of mantissa bits required at a given
+iteration. We modified ITK, the optimization library used by ANTs, to probe $K$,
+$\|\nabla \mathcal{L}\|$, and $\|\theta\|$ at each iteration. As in the original
+study \TG{not sure what the original study is, be more explicit}, $K$ was estimated using a first-order finite difference:
 \begin{equation}
 	K \approx \frac{\|\nabla \mathcal{L}(\theta_{t+1}) - \nabla \mathcal{L}(\theta_t)\|}{\|\theta_{t+1} - \theta_t\|}
 \end{equation}
-By computing Equation~\ref{eq:pmin} dynamically, we determine the minimum precision per iterations necessary to maintain the accuracy of the ANTs registration optimization.
+By computing Equation~\ref{eq:pmin} dynamically, we determine the minimum
+precision per iterations necessary to maintain the accuracy of the ANTs
+registration optimization.
 
 The model could be used to dynamically adjust precision at runtime in ANTs, or other gradient-based optimization (e.g., deep learning training), by instrumenting the code to compute $p_{min}$ at each iteration and adjusting the precision accordingly. However, this dynamic adjustment would require extensive code modification and is outside the scope of this work. We focus on evaluating the accuracy of the model in predicting precision requirements.
 
