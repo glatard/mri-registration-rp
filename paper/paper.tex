@@ -101,7 +101,16 @@ While mixed precision has the potential for significant performance gains, deter
 	\item \textbf{Heuristic Validation:} Validate these mathematical bounds against simulation benchmarks, providing a reliable heuristic to guide dynamic precision tuning for future performance optimization.
 \end{itemize}
 
-We organize the remainder of this paper as follows. Section~\ref{sec:background} introduce the concept used to build our methods and discusses related work on mixed precision computation and numerical sensitivity of MRI registration. Section~\ref{sec:theory} details the theoretical analysis of minimum precision requirements, adapting the theorem by Hayford et al.~\cite{Hayford2024-kb}. Section~\ref{sec:experiments} describes our experimental setup, including the ANTs registration pipeline, our use of VPREC to simulate arbitrary data formats, and the dataset used. Finally, we report and discuss our results in Section~\ref{sec:results} and Section~\ref{sec:discussion}, respectively. Section~\ref{sec:conclusion} concludes the paper.
+We organize the remainder of this paper as follows. Section~\ref{sec:background}
+introduces the concept used to build our methods and discusses related work on
+mixed precision computation and numerical sensitivity of MRI registration.
+Section~\ref{sec:theory} details the theoretical analysis of minimum precision
+requirements, adapting the theorem by Hayford et al.~\cite{Hayford2024-kb}.
+Section~\ref{sec:experiments} describes our experimental setup, including the
+ANTs registration pipeline, our use of VPREC to simulate arbitrary data formats,
+and the dataset used. Finally, we report and discuss our results in
+Section~\ref{sec:results} and Section~\ref{sec:discussion}, respectively.
+Section~\ref{sec:conclusion} concludes the paper.
 
 \section{Background}
 \label{sec:background}
@@ -128,11 +137,33 @@ While theoretical analysis can determine the precision requirements for a sequen
 Alternatively, dynamic analysis evaluates the precision-accuracy trade-off by varying precision across multiple executions. Tools like the VPREC backend of Verificarlo~\cite{Denis2015-zf,Chatelain2019-vw} enable the runtime simulation of arbitrary precision, enabling dynamic analysis. VPREC is non-intrusive, requiring only the recompilation of source code to instrument a pipeline. However, VPREC simulation is computationally expensive, incurring overheads ranging from $2.6\times$ to $16.8\times$~\cite{Chatelain2019-vw}. Thus, while VPREC is a powerful exploratory tool for defining numerical requirements, it is not suitable for production-level optimization.
 
 \subsection{Numerical Sensitivity in MRI Registration}
-MRI registration is an iterative optimization process that aligns a moving image to a fixed template. Within the ANTs framework, this is performed via a multi-stage pipeline each operating on a multi-resolution pyramid. Numerical errors introduced during the initial coarse alignment can propagate and amplify during subsequent high-resolution stages.
+MRI registration is commonly implemented as an iterative optimization process
+that aligns a moving image to a fixed template. Within the ANTs framework, this
+is performed via a multi-stage pipeline each operating on a multi-resolution
+pyramid. Numerical errors introduced during the initial coarse alignment can
+propagate and amplify during subsequent high-resolution stages.
 
-A study by Mirhakimi et al.~\cite{Mirhakimi2025-qb} demonstrated that numerical uncertainty in ANTs linear registration can result in mean displacement artifacts of up to 0.2mm---a magnitude comparable to typical motion observed during MRI acquisitions. Furthermore, the choice of similarity metric influences stability; Mutual Information (MI) typically exhibits higher sensitivity to numerical noise than Cross-Correlation (CC). These findings underscore that numerical stability in registration is not merely a matter of metric convergence but of anatomical integrity. Misalignments or topological distortions introduced by numerical inaccuracies can lead to erroneous clinical interpretations. Therefore, balancing accuracy and performance in MRI registration is critical to ensure reliable outcomes.
+A study by Mirhakimi et al.~\cite{Mirhakimi2025-qb} demonstrated that numerical
+uncertainty in ANTs linear registration can result in mean displacement
+artifacts of up to 0.2mm---a magnitude comparable to typical motion observed
+during MRI acquisitions. Furthermore, the choice of similarity metric influences
+stability; Mutual Information (MI) typically exhibits higher sensitivity to
+numerical noise than Cross-Correlation (CC). These findings underscore that
+numerical stability in registration is not merely a matter of metric convergence
+but also of anatomical integrity \TG{not sure what anatomical integrity means. I
+would rather underscore that numerical stability is data dependent, anatomy
+being only one aspect of the data}. Misalignments or topological distortions
+introduced by numerical inaccuracies can lead to erroneous clinical
+interpretations. Therefore, balancing accuracy and performance in MRI
+registration is critical to ensure reliable outcomes.
 
-Accuracy thresholds in this context are highly application-specific and remain poorly defined. Determining these thresholds would require extensive empirical validation across diverse clinical applications. While establishing these limits is critical to fully realizing the potential of mixed precision, it remains a significant challenge in the field and is outside the primary scope of this work.
+Accuracy thresholds in this context are highly application-specific and remain
+poorly defined. Determining these thresholds would require extensive empirical
+validation across diverse clinical applications. While establishing these limits
+is critical to fully realizing the potential of mixed precision, it remains a
+significant challenge in the field and is outside the primary scope of this
+work. \TG{I find this paragraph misplaced and ambiguous. I would rather just
+omit it, or move it to results.}
 
 \section{Theoretical Analysis}
 \label{sec:theory}
