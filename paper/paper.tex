@@ -222,7 +222,13 @@ The model could be used to dynamically adjust precision at runtime in ANTs, or o
 \subsection{ANTs Registration SyN}
 The ANTs registration framework~\cite{Avants2020-xx} is a multi-stage, multi-resolution iterative optimization pipeline that aligns a moving image to a fixed template. The default configuration consists of three sequential stages---rigid, affine, and symmetric normalization (SyN)~\cite{Avants2008-ea}---each operating across four resolution levels. These levels use a shrink factors of $8\times4\times2\times1$ with corresponding Gaussian smoothing kernels of $3\times2\times1\times0$, respectively. Prior to optimization, the images are aligned via an initial intensity-based center-of-mass transformation.
 
-The rigid and affine stages utilize mutual information (MI) as the objective function, while the SyN stage uses cross-correlation (CC). Images are smoothed prior to down-sampling at each level. The process terminates when the optimization reaches the maximum number of iterations or when the objective function converges within a threshold of $10^{-6}$ over the last 10 iterations. ANTs leverages the registration framework from the Insight Toolkit (ITK)~\cite{Yoo2002-ve, McCormick2014-ok} for computation.
+By default, the rigid and affine stages utilize mutual information (MI) as the objective
+function, while the SyN stage uses cross-correlation (CC). Images are smoothed
+prior to down-sampling at each level. The process terminates when the
+optimization reaches the maximum number of iterations or when the objective
+function converges within a threshold of $10^{-6}$ over the last 10 iterations.
+ANTs leverages the registration framework from the Insight Toolkit
+(ITK)~\cite{Yoo2002-ve, McCormick2014-ok} for computation.
 
 \subsection{Mixed Precision using VPREC}
 Although ANTs provides a flag to enable single precision (FP32) computation, our previous study~\cite{Dugre2025-fs} identified a bug in ITK\footnote{https://github.com/InsightSoftwareConsortium/ITK/issues/4593} where interpolation operations execute in double precision (FP64) regardless of compilation or runtime settings. This results in casting overhead that degrades performance compared to the default FP64 pipeline execution.
@@ -253,7 +259,15 @@ We hypothesized that precision requirements vary by stage: failures in early ali
 The empirical $p_{min}$ was estimated by evaluating VPREC results against the FP64 baseline across relative difference thresholds ($10^{-2}$ to $10^{-5}$). For each threshold, we averaged results across all subjects and identified the minimum bit-width $p$ that maintained the final iteration error within the specified tolerance.
 
 \subsection{Dataset and Infrastructure}
-We used the \textit{BMB\_1} site from the \textit{CoRR} dataset~\cite{Zuo2014-ub} ($N=50$; mean age: $30.8$ [19.9--59.7]; $52\%$ female). Anatomical $T1$-weighted volumes were skull-stripped via the antsBrainExtraction.sh script~\cite{Avants2020-xx,ANTs2023-du} and quality-controlled against the \textit{tpl-MNI152NLin2009cAsym} template~\cite{Ciric2022-mb}. Experiments were executed on the \textit{Rorqual} cluster of the Digital Research Alliance of Canada using containerized Apptainer images with architecture-specific instructions disabled to ensure reproducibility across CPU microarchitectures.
+We used the \textit{BMB\_1} site from the \textit{CoRR}
+dataset~\cite{Zuo2014-ub} ($N=50$; mean age: $30.8$ [19.9--59.7]; $52\%$
+female). Anatomical $T1$-weighted volumes were skull-stripped via the
+antsBrainExtraction.sh script~\cite{Avants2020-xx,ANTs2023-du} and
+quality-controlled against the \textit{tpl-MNI152NLin2009cAsym}
+template~\cite{Ciric2022-mb}. Experiments were executed on the \textit{Rorqual}
+cluster of the Digital Research Alliance of Canada using containerized Apptainer
+images with architecture-specific instructions disabled to ensure
+reproducibility across CPU microarchitectures. \TG{you could link to your github repo here}
 
 \section{Results}
 \label{sec:results}
