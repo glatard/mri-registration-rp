@@ -293,19 +293,49 @@ To improve readability, we omit redundant configurations for the affine and SyN 
 		\label{subfig:ants-search-0001}
 		\includegraphics[width=\textwidth]{figures/0001-syn-metric_rel_diff-mean.pdf}
 	\end{subfigure}
-	\caption{
-		Mean relative difference in similarity metrics compared to the FP64 baseline across varied exponent and mantissa configurations ($N=50$). Subfigures (a)--(c) represent the rigid, affine, and SyN stages, respectively, without instrumentation in preceding stages. Heatmap colors indicate performance relative to FP64: red denotes degradation, green denotes improvement, and white indicates numerical equivalence, with the color intensity representing the magnitude of the relative difference. Formats with hardware support are highlighted: Float32 (r8-p23), Float24 (r7-p16), TensorFloat32 (r8-p10), and BFloat16 (r8-p7). The 4-bit binary ID encodes instrumentation (1), default precision (0), or not executed (x) for: (1) initialization, (2) rigid, (3) affine, and (4) SyN stages.}
+	\caption{ Mean relative difference in similarity metrics compared to the
+		FP64 baseline across varied exponent and mantissa configurations
+		($N=50$). Subfigures (a)--(c) represent the rigid, affine, and SyN
+		stages, respectively, without instrumentation in preceding stages.
+		Heatmap colors indicate performance relative to FP64: red denotes
+		degradation, green denotes improvement, and white indicates numerical
+		equivalence, with the color intensity representing the magnitude of the
+		relative difference. Formats with hardware support are framed:
+		Float32 (r8-p23), Float24 (r7-p16), TensorFloat32 (r8-p10), and BFloat16
+		(r8-p7). The 4-bit binary ID encodes instrumentation (1), default
+		precision (0), or not executed (x) for: (1) initialization, (2) rigid,
+		(3) affine, and (4) SyN stages.}
 	\label{fig:ants-space-search}
 \end{figure*}
 
-Our results indicate that low-precision formats, such as FP32 (r8-p23) and FP24 (r7-p16), maintain high numerical integrity, with relative differences remaining below $10^{-5}$ compared to FP64. To achieve a relative difference threshold of $10^{-4}$, the rigid and affine stages require a minimum of 11 bits of precision, while the SyN stage necessitates at least 13 bits. These requirements are significantly lower than the 53 bits provided by FP64.
+Our results indicate that low-precision formats, such as FP32 (r8-p23) and FP24
+(r7-p16), maintain high accuracy, with relative differences remaining
+below $10^{-5}$ compared to FP64. To achieve a relative difference threshold of
+$10^{-4}$, the rigid and affine stages require a minimum of 11 bits of
+precision, while the SyN stage necessitates at least 13 bits. These requirements
+are significantly lower than the 53 bits provided by FP64.
 
 \subsection{Current Stage Precision Primarily Dictates Final Registration Accuracy}
-Table~\ref{tab:stage-accuracy} illustrates how precision at different stages of the pipeline affects the final similarity metric. We specifically examined the BF16 format to observe how errors propagate from the initial rigid alignment through to the final SyN stage.
+Table~\ref{tab:stage-accuracy} illustrates how precision at different stages of
+the pipeline affects the final similarity metric. We specifically examined the
+BF16 format to observe how errors propagate from the initial rigid alignment
+through to the final SyN stage.
 
-When the rigid, affine, and SyN stages were all instrumented in BF16 (Exp. ID \uline{011}\textbf{1}), the accuracy degraded progressively, resulting in a final mean relative difference of $8.68\%$. However, when the SyN stage was reverted to FP64 while maintaining BF16 for all prior stages (Exp. ID \uline{011}\textbf{0}), the accuracy recovered significantly. In this configuration, the final similarity metric was $0.54\%$ better than the FP64 baseline, despite the low-precision initialization.
+When the rigid, affine, and SyN stages were all instrumented in BF16 (Exp. ID
+\uline{011}\textbf{1}), the accuracy degraded progressively, resulting in a
+final mean relative difference of $8.68\%$. However, when the SyN stage was
+reverted to FP64 while maintaining BF16 for all prior stages (Exp. ID
+\uline{011}\textbf{0}), the accuracy recovered significantly. In this
+configuration, the final similarity metric was $0.54\%$ better than the FP64
+baseline, despite the low-precision initialization.
 
-This ``accuracy recovery'' suggests that the numerical errors introduced in early stages are not additive; instead, the final registration accuracy is governed by the precision of the active stage rather than the cumulative error propagated from preceding steps.
+This ``accuracy recovery'' suggests that the numerical errors introduced in
+early stages are not additive; instead, the final registration accuracy is
+governed by the precision of the SyN stage rather than the cumulative error
+propagated from preceding steps.
+
+\TG{conclude on the possibility to use BF16 alltogether, if only the output of
+the SyN stage is to be used}
 
 % Exception for the initialization step
 \definecolor{RedHL}{RGB}{253, 104, 100}
@@ -323,9 +353,18 @@ This ``accuracy recovery'' suggests that the numerical errors introduced in earl
 \end{table}
 
 \subsection{Predicted $p_{min}$ Yields Conservative Estimates for Convergence}
-We compared the predicted $p_{min}$ via Equation~\ref{eq:pmin} with empirical VPREC estimations. The empirical $p_{min}$ represents the minimum precision required to maintain the mean relative metric difference below specific thresholds ($10^{-2}$ to $10^{-5}$).
+We compared the predicted $p_{min}$ via Equation~\ref{eq:pmin} with empirical
+VPREC estimations. The empirical $p_{min}$ represents the minimum precision
+required to maintain the mean relative metric difference below specific
+thresholds ($10^{-2}$ to $10^{-5}$).
 
-As shown in Fig.~\ref{fig:ants-pmin-overview}, the predicted $p_{min}$ (dash line) generally acts as a conservative upper bound for the empirical thresholds, indicating that the predicted number of bits is sufficient for convergence. In the rigid and affine stages, $p_{min}$ typically remains below the 23 bits provided by FP32, while the requirements for the SyN stage are lower---typically below 15 bits (satisfied by FP24). However, we observe that the model underestimates the precision required for SyN levels 1 and 2.
+As shown in Fig.~\ref{fig:ants-pmin-overview}, the predicted $p_{min}$ (dashed
+line) generally acts as a conservative upper bound for the empirical thresholds,
+indicating that the predicted number of bits is sufficient for convergence. In
+the rigid and affine stages, $p_{min}$ typically remains below the 23 bits
+provided by FP32, while the requirements for the SyN stage are lower---typically
+below 15 bits (satisfied by FP24). However, we observe that the model
+underestimates the precision required for SyN levels 1 and 2.
 \begin{figure*}[htb!]
 	\centering
 	\includegraphics[width=\textwidth]{figures/pmin-threshold-last-iteration/pmin-overview.pdf}
@@ -354,7 +393,7 @@ Table~\ref{tab:area-ratio-summary} summarizes the percentage of the area where o
 Our evaluation of mixed precision within the ANTs framework reveals that standard low-precision formats (FP32 and FP24) are generally sufficient for robust image registration. Furthermore, our theoretical model offers an effective heuristic for bounding dynamic precision requirements. The following sections discuss the implications, limitations, and practical integration of these findings.
 
 \subsection{Numerical Stability and Convergence Floors}
-Our results establish the first ``numerical floor'' for the ANTs and ITK frameworks. While low-precision formats such as Float24 (r7-p16) maintain high numerical integrity, reducing the representation to 6 bits or fewer in either the exponent or mantissa consistently led to execution instabilities, including segmentation faults or indefinite hangs. Given the complex, multi-branched architecture of the ITK-based optimization pipeline, we attribute these failures to numerical noise triggering divergent execution paths or the failure to satisfy convergence thresholds, leading to unexpected execution states.
+Our results establish the first ``numerical floor'' for the ANTs and ITK frameworks. While low-precision formats such as Float24 (r7-p16) maintain accuracy, reducing the representation to 6 bits or fewer in either the exponent or mantissa consistently led to execution instabilities, including segmentation faults or indefinite hangs. Given the complex, multi-branched architecture of the ITK-based optimization pipeline, we attribute these failures to numerical noise triggering divergent execution paths or the failure to satisfy convergence thresholds, leading to unexpected execution states.
 
 Furthermore, the ``catastrophic failures'' observed during low-precision initialization (Exp. 1111) underscore the sensitivity of the initial global alignment. Because initialization defines the search space for all subsequent stages, rounding errors at this stage are particularly detrimental; at very low mantissa precision, these errors resulted in severe topological discontinuities and loss of anatomical structures in the transformed volumes. This suggests that while later stages exhibit a degree of resilience to numerical noise---even recovering accuracy lost in previous iterations---the center-of-mass alignment must be preserved at higher precision to ensure a stable registration.
 
@@ -363,7 +402,7 @@ The theoretical model adapted from Hayford et al.~\cite{Hayford2024-kb} assumes 
 
 Prior work in deep learning suggest that non-convexity may not invalidate convergence. Gur-Ari et al.~\cite{Gur-Ari2018-pm} demonstrated that stochastic gradient descent confines optimization to a low-dimensional subspace spanned by the top Hessian eigenvectors, which can exhibit locally convex properties, despite a globally non-convex loss landscape. Additionally, Liu et al.~\cite{Liu2020-pe} showed that over-parametrized neural networks often satisfy the Polyak-Lojasiewicz~\cite{Lojasiewicz1963-xd,Polyak1963-nd} condition, enabling convergence to a global minimum despite non-convex landscapes despite non-convex loss landscape.
 
-The ANTs registration problem differs from deep learning optimization in a critical way: transformation parameters directly affect anatomical integrity by modifying spatial voxel mappings, making over-parametrization arguments inapplicable. However, several factors may create a locally convex optimization subspace: the multi-resolution pyramid progressively refines the search space, Gaussian smoothing regularizes the loss landscape, and explicit regularization constraints further stabilize optimization. Future work should characterize the ANTs loss landscape to validate these theoretical assumptions.
+The ANTs registration problem differs from deep learning optimization in a critical way: transformation parameters directly affect anatomical integrity \TG{not sure what this means, rephrase} by modifying spatial voxel mappings, making over-parametrization arguments inapplicable. However, several factors may create a locally convex optimization subspace: the multi-resolution pyramid progressively refines the search space, Gaussian smoothing regularizes the loss landscape, and explicit regularization constraints further stabilize optimization. Future work should characterize the ANTs loss landscape to validate these theoretical assumptions.
 
 Our model attempts to capture complex optimization dynamics via heuristic. Its predictions are conservative, underestimating the bit requirements by only 6--17\% across difference thresholds and tends to over-predict by 26--50\%. Over-prediction preserves the convergence guarantee but limits the potential speedup from lower-bit formats, while under-prediction risks convergence issues. Balancing these factors is essential for maximizing performance without compromising numerical stability.
 
@@ -373,6 +412,8 @@ Our current experiments incur a large computational cost by simulating each rang
 However, fine-grained mixed precision presents two primary technical challenges. First, frequent precision casting can cause overhead that outscales the arithmetic benefits. Second, implementing such tuning is difficult in large, legacy codebases like ITK. In our methods the similarity metric calculation is computed in FP64 to preserve stability. In practice, this would create a large casting overhead at each iteration and be challenging to implement spatial mixed precision in ITK. Future research must align the similarity metric's precision with the optimization pipeline to simplify configuration and eliminate casting bottlenecks.
 
 \subsection{Limitations and Clinical Relevance}
+\TG{I would avoid using the word ``clinical'' here, clinical validation would involve a whole other range of data and metrics}
+
 While our model effectively predicts the minimum precision requirement, several components limit its generalizability and require further research. First, our current model makes precision predictions based on the FP64 loss landscape. Dynamically adjusting the computational precision based on these predictions would modify the loss landscape, potentially affecting the accuracy of subsequent predictions. Second, we utilized the $L_2$ norm consistently with Hayford et al.~\cite{Hayford2024-kb}, which does not account for the varying units and scales of affine transformation parameters. Future studies should investigate scale-invariant norms, such as the Mahalanobis norm. Third, since previous work demonstrated that similarity metrics significantly influence numerical stability~\cite{Mirhakimi2025-qb}, the interaction between other metric types and mixed precision requires deeper investigation.
 
 Finally, the accuracy thresholds in this study were strictly defined via relative numerical differences from the FP64 baseline. These pure mathematical thresholds lack direct clinical interpretation. To confidently transition mixed precision registration into clinical deployment, future work must evaluate the impact of minor registration differences on concrete downstream tasks. This involves ensuring reliability in clinical applications such as volume estimation in voxel-based morphometry, longitudinal tracking of lesions, or high-stakes surgical planning, where the margin for topological distortion is critical.
