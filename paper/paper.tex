@@ -40,7 +40,29 @@
 \maketitle
 
 \begin{abstract}
-	Registration is key to MRI analysis, allowing comparison between two or more images. Its high compute cost limits analysis of larger cohorts and time sensitive applications. Mixed precision is a technique leveraging high- and low-precision arithmetic to accelerate computations while maintaining accuracy. Its success in accelerating deep learning models led to a broad adoption, but its adoption remains limited in other scientific domains due to the limited understanding of its effect in complex application. In this work, we propose to study the effects of mixed precision in ANTs registration---a common MRI registration pipeline. We use VPREC to simulate arbitrary precision arithmetic, and develop a model to predict the minimal precision required for convergence per iteration of the optimization process. Our results suggest that using low precision (FP32 \& FP24) is sufficient in ANTs registration. Our model tends to underestimate the number of precision bits required by 11.6\%, on average (threshold: $10^{-3}$). Our work pushes the understanding of mixed precision in ANTs registration, by characterizing when the method is beneficial. Therefore, laying the ground for practical acceleration of the pipeline. Furthermore, our theoretical model offer a simple approach to optimizing the precision in ANTs registration, offering a building block for more accurate predictions.
+	Image registration is key to MRI analysis, allowing comparison between two
+	or more images. Its high compute cost limits analysis of larger cohorts and
+	time sensitive applications. Mixed precision is a technique leveraging high-
+	and low-precision arithmetic to accelerate computations while maintaining
+	accuracy. Its success in accelerating deep learning models led to a broad
+	adoption, but its adoption remains limited in other scientific domains due
+	to the limited understanding of its effect in complex application. In this
+	work, we propose to study the effects of mixed precision in ANTs
+	registration---a common MRI registration pipeline. We use VPREC to simulate
+	arbitrary precision arithmetic, and develop a model to predict the minimal
+	precision required for convergence per iteration of the optimization
+	process. Our results suggest that using low precision (FP32 \& FP24) is
+	sufficient in ANTs registration. Our model tends to underestimate the number
+	of precision bits required by 11.6\%, on average \TG{transition with
+	previous sentence is missing} (threshold: $10^{-3}$ \TG{remove mention of
+	threshold in abstract, it's almost impossible to understand what it means}).
+	Our work advances the understanding of mixed precision in ANTs registration,
+	by characterizing when the method \TG{``the method'' is ambiguous} is
+	beneficial. Therefore, laying the ground for practical acceleration of the
+	pipeline \TG{This sentence isn't grammatically correct}. Furthermore, our
+	theoretical model offers a simple approach to optimizing the precision in
+	ANTs registration, offering a building block for more accurate predictions
+	\TG{why to more accurate predictions? This is quite ambiguous}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -49,11 +71,28 @@
 
 \section{Introduction}
 \label{sec:introduction}
-Image registration transforms a pair or collection of images to a common space, enabling comparison between those images. It is a critical step in magnetic resonance imaging (MRI) processing pipelines as it enable the comparison of images acquired at different times, from different subjects, or from different modalities. Therefore, allowing for longitudinal studies, group analysis, or multi-modal imaging. By consequence, registration is an important step in toolkits such as the Advanced Normalization Tools (ANTs) registration framework~\cite{Avants2020-xx}---a widely adopted tool in the community.
+Image registration transforms a pair or collection of images to a common space,
+enabling comparison between those images. It is a critical step in magnetic
+resonance imaging (MRI) processing pipelines as it enable the comparison of
+images acquired at different times, from different subjects, or from different
+modalities. Therefore, allowing for longitudinal studies, group analysis, or
+multi-modal imaging \TG{this sentence isn't grammatically correct}. By
+consequence \TG{Frenchicism?}, registration is an important step in toolkits such as the Advanced
+Normalization Tools (ANTs) registration framework~\cite{Avants2020-xx}---a
+widely adopted tool in the neuroimaging community.
 
 MRI registration incurs a significant computational cost, often accounting for a majority of the runtime for MRI processing pipelines. As a result, optimizing registration performance is crucial for improving the overall efficiency of MRI processing---enabling studies with larger cohorts and clinical applications requiring processing in timely manner. Our previous study~\cite{Dugre2025-fs} identified two primary performance bottlenecks in MRI processing pipelines: (1) interpolation computation in the registration process and (2) memory bandwidth limitations.
 
-Mixed precision arithmetic leverages a mix of high- and low-precision data formats to accelerate applications while maintaining acceptable accuracy. Data formats with smaller bit width have faster arithmetic operations and reduce the memory footprint. Therefore, it has the potential to alleviate both bottlenecks. However, while mixed precision has the potential for significant performance gains, it is unclear when and where it can be applied in complex scientific pipelines like medical image registration without compromising result integrity.
+Mixed precision arithmetic leverages a mix of high- and low-precision data
+formats to accelerate applications while maintaining acceptable accuracy. Data
+formats with smaller bit width have faster arithmetic operations \TG{Data
+formats don't "have" operations} and reduce the memory footprint. Therefore, it
+\TG{ambiguous pronoun reference: it refers to mixed precision while the writing
+flow suggests it refers to data formats} has the potential to alleviate both
+bottlenecks. However, while mixed precision has the potential for significant
+performance gains, it is unclear when and where it can be applied in complex
+scientific pipelines like medical image registration without compromising result
+integrity \TG{integrity refers to something else, use accuracy instead}.
 
 While mixed precision has the potential for significant performance gains, determining the appropriate precision either spatially, temporally, or both, is challenging in complex or large-scale applications. We conduct a detailed analysis of mixed precision formats in the context of ANTs registration pipeline~\cite{Avants2020-xx}. This work contributes to the understanding and application of mixed precision formats in MRI registration by doing the following:
 \begin{itemize}
